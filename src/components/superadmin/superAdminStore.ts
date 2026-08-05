@@ -413,7 +413,7 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
     storage.setItem('superAdminToken', mockToken)
     storage.setItem('userType', 'superadmin')
     set({
-      isProfileComplete: true,
+      isProfileComplete: false,
       profile: {
         ...get().profile,
         fullName: 'SuperAdmin',
