@@ -1,6 +1,24 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 @import 'tw-animate-css';
+@import './styles/portal.css';
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --primary: #2E86AB;
+  --primary-foreground: #ffffff;
+  --accent: #f0f9ff;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --destructive: #dc2626;
+  --destructive-bg: #fee2e2;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --ring: #2E86AB;
+  --radius: 0.5rem;
+}
 
 .custom-scroll::-webkit-scrollbar {
   width: 4px;

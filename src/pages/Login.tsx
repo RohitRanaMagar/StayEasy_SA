@@ -90,7 +90,7 @@ export default function Login() {
           return
         }
         try {
-          const { default: pmsApi } = await import('../services/pmsApi')
+          const pmsApi = await import('../services/pmsApi')
           const properties = await pmsApi.getAllProperties()
           if (Array.isArray(properties) && properties.length > 0) {
             setTimeout(() => navigate('/host/my-properties'), 1500)

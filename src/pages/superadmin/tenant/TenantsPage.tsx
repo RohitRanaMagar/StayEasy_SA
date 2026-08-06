@@ -8,7 +8,7 @@ import {
 import { useSuperAdminStore } from '../../../components/superadmin/superAdminStore'
 import type { TenantExtended } from '../../../types/superadmin'
 import TenantDetailDrawer from './TenantDetailDrawer'
-import CreateTenantModal from './CreateTenantModal'
+import CreateTenantWizard from '../../../components/CreateTenantWizard'
 import EditTenantModal from './EditTenantModal'
 
 import { mockTenantsExtended } from '../../../data/superAdminMockData'
@@ -45,7 +45,7 @@ export default function TenantsPage() {
 
   const [drawerTenant, setDrawerTenant] = useState<TenantExtended | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
+  const [wizardOpen, setWizardOpen] = useState(false)
   const [editTenant, setEditTenant] = useState<TenantExtended | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [changePlanTenant, setChangePlanTenant] = useState<TenantExtended | null>(null)
@@ -180,7 +180,7 @@ export default function TenantsPage() {
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
               <Download size={14} /> Export
             </button>
-            <button onClick={() => setCreateOpen(true)}
+            <button onClick={() => setWizardOpen(true)}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white rounded-lg"
               style={{ background: 'linear-gradient(135deg, #10014a, #030c57)' }}>
               <Plus size={14} /> Create Tenant
@@ -409,7 +409,7 @@ export default function TenantsPage() {
       <TenantDetailDrawer tenant={drawerTenant} open={drawerOpen} onClose={() => setDrawerOpen(false)}
         onImpersonate={handleImpersonate} onSuspend={handleSuspend} onEdit={handleEdit}
         onChangePlan={handleChangePlan} onDelete={handleDelete} />
-      <CreateTenantModal open={createOpen} onClose={() => setCreateOpen(false)} />
+      <CreateTenantWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
       <EditTenantModal tenant={editTenant} open={editOpen} onClose={() => setEditOpen(false)} onSave={handleSaveEdit} />
 
       {/* Change Plan Modal */}
