@@ -266,19 +266,16 @@ export default function ApiKeysPage() {
     <PageTransition>
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>API Keys</h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">Manage and monitor API keys, permissions, and usage</p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
         <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-colors sm:ml-auto"
           style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' }}>
           <Plus size={13} /> Create API Key
         </button>
       </div>
 
-      {/* Stats */}
+      {/* Stats */} 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="bg-white rounded-lg border border-gray-100 p-3">
           <div className="flex items-center gap-2 mb-1">

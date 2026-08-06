@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, CreditCard, Package, DollarSign, BarChart3, Code,
   Activity, Layers, Eye, FileText, Flag, Settings, Puzzle, Shield, Users, Key,
   ChevronsLeft, ChevronsRight, X, LogOut, MessageSquare, Megaphone,
-  ChevronDown, List, UserPlus,
+  ChevronDown, List, UserPlus, Bell, Mail,
 } from 'lucide-react'
 import { sidebarSections } from '../../data/superAdminNav'
 import logo1 from '/logo1.png'
@@ -12,7 +12,7 @@ import logo1 from '/logo1.png'
 const iconMap: Record<string, typeof LayoutDashboard> = {
   Building2, CreditCard, Package, DollarSign, BarChart3, Code,
   Activity, Layers, Eye, FileText, Flag, Settings, Puzzle, Shield, Users, Key,
-  MessageSquare, Megaphone, List, UserPlus,
+  MessageSquare, Megaphone, List, UserPlus, Bell, Mail,
 }
 
 interface SuperAdminSidebarProps {
@@ -27,6 +27,7 @@ interface SuperAdminSidebarProps {
 function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobileClose?: () => void }) {
   const location = useLocation()
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({})
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
 
   const handleClick = () => onMobileClose?.()
 
@@ -34,10 +35,22 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
     setOpenDropdowns(prev => ({ ...prev, [label]: !prev[label] }))
   }
 
+  const toggleSection = (label: string) => {
+    setOpenSections(prev => ({ ...prev, [label]: !prev[label] }))
+  }
+
   const isDropdownOpen = (label: string) => openDropdowns[label] || false
+  const isSectionOpen = (label: string) => openSections[label] || false
 
   const isChildActive = (children: { path?: string }[]) =>
     children.some(child => child.path && location.pathname === child.path)
+
+  const isSectionChildActive = (items: { path?: string; children?: { path?: string }[] }[]) =>
+    items.some(item => {
+      if (item.path && location.pathname === item.path) return true
+      if (item.children) return item.children.some(child => child.path && location.pathname === child.path)
+      return false
+    })
 
   return (
     <nav className="flex-1 overflow-y-auto py-3 px-3 custom-scroll">
@@ -57,19 +70,40 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
         }
       >
         <LayoutDashboard size={18} className="shrink-0" />
-        {!collapsed && <span className="text-[13px] font-medium">Dashboard</span>}
+        {!collapsed && <span className="text-[14px] font-medium text-white">Dashboard</span>}
       </NavLink>
 
       {/* Sections */}
-      {sidebarSections.map((section) => (
-        <div key={section.label} className="mt-4">
-          {!collapsed && (
-            <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-[1.5px] text-white/30 uppercase">
-              {section.label}
-            </div>
-          )}
-          {collapsed && <div className="mx-auto mb-1.5 w-5 h-px bg-white/10" />}
-          {section.items.map((item) => {
+      {sidebarSections.map((section) => {
+        const sectionOpen = collapsed ? true : isSectionOpen(section.label)
+        const sectionActive = isSectionChildActive(section.items)
+
+        return (
+          <div key={section.label} className="mt-4">
+            {/* Section header — clickable dropdown */}
+            {!collapsed ? (
+              <button
+                onClick={() => toggleSection(section.label)}
+                className={`w-full flex items-center gap-2 px-3 mb-1.5 rounded-lg transition-all duration-150 ${
+                  sectionActive
+                    ? 'text-[#57B8D9]'
+                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'
+                }`}
+              >
+                <ChevronDown
+                  size={12}
+                  className={`shrink-0 transition-transform duration-200 ${sectionOpen ? 'rotate-0' : '-rotate-90'}`}
+                />
+                <span className="text-[12px] font-semibold tracking-[1.5px] uppercase text-white">
+                  {section.label}
+                </span>
+              </button>
+            ) : (
+              <div className="mx-auto mb-1.5 w-5 h-px bg-white/10" />
+            )}
+
+            {/* Section items */}
+            {sectionOpen && section.items.map((item) => {
             const Icon = iconMap[item.icon] || LayoutDashboard
             const hasChildren = item.children && item.children.length > 0
             const isOpen = isDropdownOpen(item.label)
@@ -149,7 +183,8 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
             )
           })}
         </div>
-      ))}
+        )
+      })}
     </nav>
   )
 }

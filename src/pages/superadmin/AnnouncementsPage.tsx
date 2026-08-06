@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Search, Plus, ChevronLeft, ChevronRight,
   CheckCircle, Clock, Send, Trash2, Eye, X,
@@ -20,14 +21,12 @@ const typeConfig: Record<string, { text: string; bg: string }> = {
   update: { text: 'Update', bg: 'bg-green-100 text-green-600' },
 }
 
-type AnnouncementType = 'info' | 'warning' | 'maintenance' | 'update'
-type AnnouncementTarget = 'all' | 'selected' | 'plan_based'
 type AnnouncementStatus = 'draft' | 'scheduled' | 'sent'
 
 export default function AnnouncementsPage() {
+  const navigate = useNavigate()
   const { showToast } = useToast()
   const announcements = useSuperAdminStore(s => s.announcements)
-  const addAnnouncement = useSuperAdminStore(s => s.addAnnouncement)
   const sendAnnouncement = useSuperAdminStore(s => s.sendAnnouncement)
   const deleteAnnouncement = useSuperAdminStore(s => s.deleteAnnouncement)
 
@@ -36,17 +35,7 @@ export default function AnnouncementsPage() {
   const [page, setPage] = useState(0)
   const perPage = 8
 
-  const [showCreate, setShowCreate] = useState(false)
   const [previewAnn, setPreviewAnn] = useState<typeof announcements[0] | null>(null)
-
-  // Create form state
-  const [formTitle, setFormTitle] = useState('')
-  const [formMessage, setFormMessage] = useState('')
-  const [formType, setFormType] = useState<AnnouncementType>('info')
-  const [formTarget, setFormTarget] = useState<AnnouncementTarget>('all')
-  const [formPlans, setFormPlans] = useState<string[]>([])
-  const [formSendEmail, setFormSendEmail] = useState(true)
-  const [formSendInApp, setFormSendInApp] = useState(true)
 
   const filtered = useMemo(() => {
     let result = [...announcements]
@@ -71,26 +60,6 @@ export default function AnnouncementsPage() {
     scheduled: announcements.filter(a => a.status === 'scheduled').length,
   }
 
-  const handleCreate = () => {
-    if (!formTitle.trim() || !formMessage.trim()) {
-      showToast('error', 'Please fill all required fields')
-      return
-    }
-    addAnnouncement({
-      title: formTitle,
-      message: formMessage,
-      type: formType,
-      target: formTarget,
-      targetPlans: formTarget === 'plan_based' ? formPlans as any : undefined,
-      sendEmail: formSendEmail,
-      sendInApp: formSendInApp,
-      status: 'draft',
-    })
-    showToast('success', 'Announcement created')
-    setShowCreate(false)
-    resetForm()
-  }
-
   const handleSend = (id: string) => {
     sendAnnouncement(id)
     showToast('success', 'Announcement sent')
@@ -101,31 +70,14 @@ export default function AnnouncementsPage() {
     showToast('success', 'Announcement deleted')
   }
 
-  const resetForm = () => {
-    setFormTitle('')
-    setFormMessage('')
-    setFormType('info')
-    setFormTarget('all')
-    setFormPlans([])
-    setFormSendEmail(true)
-    setFormSendInApp(true)
-  }
-
-  const togglePlan = (plan: string) => {
-    setFormPlans(prev => prev.includes(plan) ? prev.filter(p => p !== plan) : [...prev, plan])
-  }
-
   return (
     <PageTransition>
       <div className="space-y-3">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>Announcements</h2>
-            <p className="text-[12px] text-gray-400 mt-0.5">Send platform-wide announcements to tenants</p>
-          </div>
-          <button onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 text-white text-[12px] font-medium rounded-lg"
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+          <button onClick={() => navigate('/superadmin/inbox')}
+            className="flex items-center gap-2 px-4 py-2 text-white text-[12px] font-medium rounded-lg sm:ml-auto"
             style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
             <Plus size={14} /> New Announcement
           </button>
@@ -252,96 +204,6 @@ export default function AnnouncementsPage() {
             </div>
           )}
         </div>
-
-        {/* Create Modal */}
-        {showCreate && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl border border-gray-100 w-full max-w-lg">
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="text-[14px] font-bold text-gray-900">New Announcement</h3>
-                <button onClick={() => { setShowCreate(false); resetForm() }} className="p-1 rounded-lg hover:bg-gray-100">
-                  <X size={16} className="text-gray-400" />
-                </button>
-              </div>
-              <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
-                <div>
-                  <label className="text-[11px] text-gray-500 font-medium mb-1 block">Title *</label>
-                  <input value={formTitle} onChange={e => setFormTitle(e.target.value)}
-                    className="w-full px-3 py-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E86AB]/20" />
-                </div>
-                <div>
-                  <label className="text-[11px] text-gray-500 font-medium mb-1 block">Message *</label>
-                  <textarea value={formMessage} onChange={e => setFormMessage(e.target.value)} rows={4}
-                    className="w-full px-3 py-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E86AB]/20 resize-none" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[11px] text-gray-500 font-medium mb-1 block">Type</label>
-                    <select value={formType} onChange={e => setFormType(e.target.value as AnnouncementType)}
-                      className="w-full px-3 py-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E86AB]/20">
-                      <option value="info">Info</option>
-                      <option value="warning">Warning</option>
-                      <option value="maintenance">Maintenance</option>
-                      <option value="update">Update</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-gray-500 font-medium mb-1 block">Target Audience</label>
-                    <select value={formTarget} onChange={e => setFormTarget(e.target.value as AnnouncementTarget)}
-                      className="w-full px-3 py-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E86AB]/20">
-                      <option value="all">All Tenants</option>
-                      <option value="plan_based">By Plan</option>
-                      <option value="selected">Selected Tenants</option>
-                    </select>
-                  </div>
-                </div>
-                {formTarget === 'plan_based' && (
-                  <div>
-                    <label className="text-[11px] text-gray-500 font-medium mb-2 block">Select Plans</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['Free Trial', 'Basic', 'Professional', 'Enterprise'].map(plan => (
-                        <button key={plan} onClick={() => togglePlan(plan)}
-                          className={`px-3 py-1.5 text-[11px] font-medium rounded-lg border transition-colors ${
-                            formPlans.includes(plan)
-                              ? 'bg-[#2E86AB] text-white border-[#2E86AB]'
-                              : 'bg-white text-gray-600 border-gray-200 hover:border-[#2E86AB]'
-                          }`}>
-                          {plan}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <label className="text-[11px] text-gray-500 font-medium mb-2 block">Channels</label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={formSendInApp} onChange={e => setFormSendInApp(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-[#2E86AB] focus:ring-[#2E86AB]" />
-                      <span className="text-[12px] text-gray-600">In-App Notification</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={formSendEmail} onChange={e => setFormSendEmail(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-[#2E86AB] focus:ring-[#2E86AB]" />
-                      <span className="text-[12px] text-gray-600">Email</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-2">
-                <button onClick={() => { setShowCreate(false); resetForm() }}
-                  className="px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                  Cancel
-                </button>
-                <button onClick={handleCreate}
-                  className="px-4 py-2 text-[12px] font-medium text-white rounded-lg"
-                  style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
-                  Create Draft
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Preview Modal */}
         {previewAnn && (

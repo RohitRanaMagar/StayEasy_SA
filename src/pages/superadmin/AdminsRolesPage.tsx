@@ -202,13 +202,10 @@ export default function AdminsRolesPage() {
     <PageTransition>
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>Admins & Roles</h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">Manage admin users, roles, and permissions</p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
         <button onClick={() => setShowInvite(true)}
-          className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-colors sm:ml-auto"
           style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
           <UserPlus size={13} /> Invite Admin
         </button>

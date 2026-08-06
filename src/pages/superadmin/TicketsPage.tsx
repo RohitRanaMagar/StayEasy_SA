@@ -127,13 +127,10 @@ export default function TicketsPage() {
     <PageTransition>
       <div className="space-y-3">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>Support Tickets</h2>
-            <p className="text-[12px] text-gray-400 mt-0.5">Manage escalated issues from tenant admins</p>
-          </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
           <button onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 text-white text-[12px] font-medium rounded-lg"
+            className="flex items-center gap-2 px-4 py-2 text-white text-[12px] font-medium rounded-lg sm:ml-auto"
             style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
             <Plus size={14} /> New Ticket
           </button>

@@ -28,7 +28,6 @@ export const sidebarSections: SidebarSection[] = [
       { label: 'Monitoring', icon: 'Eye', path: '/superadmin/monitoring' },
       { label: 'Logs', icon: 'FileText', path: '/superadmin/logs' },
       { label: 'Tickets', icon: 'MessageSquare', path: '/superadmin/tickets' },
-      { label: 'Announcements', icon: 'Megaphone', path: '/superadmin/announcements' },
     ],
   },
   {
@@ -37,6 +36,14 @@ export const sidebarSections: SidebarSection[] = [
       { label: 'Feature Flags', icon: 'Flag', path: '/superadmin/feature-flags' },
       { label: 'Settings', icon: 'Settings', path: '/superadmin/settings' },
       { label: 'Integrations', icon: 'Puzzle', path: '/superadmin/integrations' },
+    ],
+  },
+  {
+    label: 'COMMUNICATION',
+    items: [
+      { label: 'Announcements', icon: 'Megaphone', path: '/superadmin/announcements' },
+      { label: 'Notifications', icon: 'Bell', path: '/superadmin/notifications' },
+      { label: 'Message Inbox', icon: 'Mail', path: '/superadmin/inbox' },
     ],
   },
   {

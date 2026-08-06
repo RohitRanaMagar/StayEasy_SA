@@ -599,14 +599,9 @@ export default function FeatureFlagsPage() {
     <PageTransition>
     <div className="space-y-3">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
-            Feature Flags
-          </h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">Manage global feature flags, tenant overrides, and white-label branding</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+        <div className="flex items-center gap-2 sm:ml-auto">
           <button onClick={handleSync} disabled={syncing}
             className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
             {syncing ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} {syncing ? 'Syncing...' : 'Sync'}

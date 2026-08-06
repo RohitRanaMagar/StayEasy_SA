@@ -180,14 +180,9 @@ export default function AuditLogsPage() {
     <PageTransition>
     <div className="space-y-3">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
-            Audit Logs
-          </h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">Track all administrative actions and system events across the platform</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+        <div className="flex items-center gap-2 sm:ml-auto">
           <button
             onClick={() => setShowFilters(v => !v)}
             className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium rounded-lg transition-colors ${

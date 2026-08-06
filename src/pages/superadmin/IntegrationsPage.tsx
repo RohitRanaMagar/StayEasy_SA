@@ -394,14 +394,15 @@ export default function IntegrationsPage() {
   return (
     <div className="space-y-3">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
-            Integrations
-          </h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">Connect third-party services, manage API keys, and configure webhooks</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="relative max-w-xs">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search services..."
+              className="w-full pl-8 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-lg outline-none focus:border-blue-300" />
+          </div>
+
+        <div className="flex items-center gap-2 sm:ml-auto">
           <button onClick={() => showToast('success', 'Integrations exported (mock)')}
             className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
             <Download size={13} /> Export
@@ -456,12 +457,7 @@ export default function IntegrationsPage() {
       {/* ── Services Tab ──────────────────────────────── */}
       {activeTab === 'services' && (
         <div className="space-y-4">
-          <div className="relative max-w-xs">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search services..."
-              className="w-full pl-8 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-lg outline-none focus:border-blue-300" />
-          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {filteredServices.map(service => (
               <ServiceCard key={service.id} service={service} onConfigure={setConfigureService} />

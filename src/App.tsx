@@ -35,6 +35,7 @@ const SuperAdminAnnouncements = lazy(() => import('./pages/superadmin/Announceme
 const SuperAdminProfile = lazy(() => import('./pages/superadmin/SuperAdminProfile'))
 const SuperAdminProfileLayout = lazy(() => import('./components/superadmin/SuperAdminProfileLayout'))
 const SuperAdminNotifications = lazy(() => import('./pages/superadmin/SuperAdminNotifications'))
+const SuperAdminInbox = lazy(() => import('./pages/superadmin/InboxPage'))
 
 function App() {
   return (
@@ -81,6 +82,8 @@ function App() {
             <Route path="api-keys" element={<SuperAdminApiKeys />} />
             <Route path="tickets" element={<SuperAdminTickets />} />
             <Route path="announcements" element={<SuperAdminAnnouncements />} />
+            <Route path="notifications" element={<SuperAdminNotifications />} />
+            <Route path="inbox" element={<SuperAdminInbox />} />
           </Route>
           <Route path="*" element={<Navigate to="/superadmin/login" replace />} />
         </Routes>
