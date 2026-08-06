@@ -434,14 +434,9 @@ export default function PlansPage() {
     <PageTransition>
     <div className="space-y-3">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
-            Plans & Pricing
-          </h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">Manage subscription plans, pricing tiers, and feature sets</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+        <div className="flex items-center gap-2 sm:ml-auto">
           {/* View toggle */}
           <div className="flex bg-gray-100 rounded-lg p-0.5">
             <button

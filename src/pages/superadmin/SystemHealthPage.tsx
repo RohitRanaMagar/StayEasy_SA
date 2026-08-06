@@ -385,17 +385,14 @@ export default function SystemHealthPage() {
     <div className="space-y-3">
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
-            System Health
-          </h2>
+        
           <div className="flex items-center gap-2 mt-1">
             <div className={`w-2.5 h-2.5 rounded-full ${overallColor} animate-pulse`} />
             <span className={`text-[13px] font-medium ${overallColor}`}>{overallStatus}</span>
             <span className="text-[11px] text-gray-400">
               — {servicesStatus.filter(s => s.status === 'operational').length}/{servicesStatus.length} services
             </span>
-          </div>
+          
         </div>
 
         <div className="flex items-center gap-2">

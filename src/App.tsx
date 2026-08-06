@@ -6,6 +6,9 @@ import { SuperAdminRoute } from './components/SuperAdminRoute'
 import { ScrollRestoration } from './components/ScrollRestoration'
 
 const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const SuperAdminLayout = lazy(() => import('./components/superadmin/SuperAdminLayout'))
 const SuperAdminDashboard = lazy(() => import('./pages/superadmin/SuperAdminDashboard'))
 const SuperAdminSystemHealth = lazy(() => import('./pages/superadmin/SystemHealthPage'))
@@ -40,6 +43,15 @@ function App() {
       <Suspense fallback={<PageLoader />}>
         <ErrorBoundary>
         <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/host/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/host/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/host/forgot-password" element={<ForgotPassword />} />
+          <Route path="/superadmin/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/host/reset-password" element={<ResetPassword />} />
           <Route path="/superadmin/login" element={<Login />} />
           <Route path="/superadmin/profile" element={<SuperAdminRoute><SuperAdminProfileLayout /></SuperAdminRoute>}>
             <Route index element={<SuperAdminProfile />} />

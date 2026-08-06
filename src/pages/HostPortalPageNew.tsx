@@ -300,6 +300,14 @@ export default function HostPortalPageNew() {
 
   const saveCurrentStep = useCallback(async (): Promise<boolean> => {
     setSaveError(null)
+
+    if (!user) {
+      if (currentStep === 'property' && propertyId === null) {
+        setPropertyId(`demo_${Date.now()}`)
+      }
+      return true
+    }
+
     try {
       switch (currentStep) {
         case 'type':

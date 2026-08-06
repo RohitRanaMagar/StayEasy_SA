@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { AxiosError } from 'axios'
 import { Eye, EyeOff } from 'lucide-react'
-import BuildingScene from '../components/superadmin/BuildingScene'
+import loginHero from '../assets/Untitled-design-(2).mp4'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 import { useSuperAdminStore } from '../components/superadmin/superAdminStore'
@@ -41,31 +41,16 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(true)
-  const [pwFocused, setPwFocused] = useState(false)
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [loginClicked, setLoginClicked] = useState(false)
-
-  const [view, setView] = useState<'login' | 'forgot'>('login')
-  const [fpEmail, setFpEmail] = useState('')
-  const [fpStep, setFpStep] = useState(1)
-  const [fpOtp, setFpOtp] = useState('')
-  const [fpNewPassword, setFpNewPassword] = useState('')
-  const [fpConfirmPassword, setFpConfirmPassword] = useState('')
-  const [fpLoading, setFpLoading] = useState(false)
-  const [fpError, setFpError] = useState('')
-  const [showConfirm, setShowConfirm] = useState(false)
-
-  const fieldsReady = email.trim().length > 0 && password.trim().length > 0
 
   const handleLogin = async () => {
     setError('')
-    setLoginClicked(true)
 
-    if (!email.trim()) { setError('Email is required.'); setLoginClicked(false); return }
-    if (!EMAIL_RE.test(email)) { setError('Please enter a valid email address.'); setLoginClicked(false); return }
-    if (!password.trim()) { setError('Password is required.'); setLoginClicked(false); return }
+    if (!email.trim()) { setError('Email is required.'); return }
+    if (!EMAIL_RE.test(email)) { setError('Please enter a valid email address.'); return }
+    if (!password.trim()) { setError('Password is required.'); return }
 
     setLoading(true)
     try {
@@ -103,7 +88,6 @@ export default function Login() {
       }
     } catch (err) {
       setError(extractError(err))
-      setLoginClicked(false)
       setLoading(false)
     }
   }
@@ -122,8 +106,8 @@ export default function Login() {
     >
       <div
         style={{
-          width: 640,
-          height: 440,
+          width: 820,
+          height: 470,
           background: '#fff',
           borderRadius: 16,
           display: 'flex',
@@ -131,15 +115,21 @@ export default function Login() {
           boxShadow: '0 8px 40px rgba(0,0,0,0.13)',
         }}
       >
-        {view === 'login' && (
-          <>
-            <div style={{ width: '50%', background: '#dde0ee', order: 1, flexShrink: 0 }}>
-              <BuildingScene
-                mode="login"
-                fieldsReady={fieldsReady}
-                loginClicked={loginClicked}
-                passwordFocused={pwFocused}
-                passwordVisible={showPw}
+        <div style={{ width: '50%', background: '#dde0ee', order: 1, flexShrink: 0, position: 'relative' }}>
+              <video
+                src={loginHero}
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                }}
               />
             </div>
 
@@ -213,7 +203,6 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  onFocus={() => setPwFocused(false)}
                   placeholder="Enter your email"
                   autoComplete="off"
                   style={{
@@ -246,8 +235,6 @@ export default function Login() {
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  onFocus={() => setPwFocused(true)}
-                  onBlur={() => setPwFocused(false)}
                   placeholder="Set your password"
                   autoComplete="off"
                   style={{
@@ -293,26 +280,12 @@ export default function Login() {
                 <label htmlFor="remember" style={{ fontSize: 11, color: '#999' }}>
                   Remember me
                 </label>
-                {isSuperAdmin ? (
-                  <span
-                    onClick={() => {
-                      setFpEmail(email)
-                      setFpError('')
-                      setFpStep(1)
-                      setView('forgot')
-                    }}
-                    style={{ fontSize: 11, color: '#bbb', cursor: 'pointer', marginLeft: 'auto' }}
-                  >
-                    Forgot password?
-                  </span>
-                ) : (
-                  <span
-                    onClick={() => navigate(isHost ? '/host/forgot-password' : '/forgot-password')}
-                    style={{ fontSize: 11, color: '#bbb', cursor: 'pointer', marginLeft: 'auto' }}
-                  >
-                    Forgot password?
-                  </span>
-                )}
+                <span
+                  onClick={() => navigate(isSuperAdmin ? '/superadmin/forgot-password' : isHost ? '/host/forgot-password' : '/forgot-password')}
+                  style={{ fontSize: 11, color: '#bbb', cursor: 'pointer', marginLeft: 'auto' }}
+                >
+                  Forgot password?
+                </span>
               </div>
 
               {error && (
@@ -351,256 +324,7 @@ export default function Login() {
                 </div>
               )}
             </div>
-          </>
-        )}
-
-        {view === 'forgot' && isSuperAdmin && (
-          <>
-            <div
-              className="custom-scroll"
-              style={{
-                width: '50%',
-                background: '#fff',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                padding: '28px 32px 32px',
-                order: 1,
-                flexShrink: 0,
-                overflowY: 'auto',
-              }}
-            >
-              {fpStep === 1 && (
-                <>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#111', marginBottom: 3 }}>
-                    Forgot password?
-                  </div>
-                  <div style={{ fontSize: 12, color: '#999', marginBottom: 20 }}>
-                    Enter your email and we'll send you a reset code.
-                  </div>
-
-                  <div style={{ position: 'relative', marginBottom: 13 }}>
-                    <label
-                      style={{
-                        fontSize: 11, color: '#666', marginBottom: 3, display: 'block',
-                        textTransform: 'uppercase', letterSpacing: '0.4px',
-                      }}
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={fpEmail}
-                      onChange={e => setFpEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      autoComplete="off"
-                      style={{
-                        width: '100%', border: 'none', borderBottom: '1.5px solid #ddd',
-                        padding: '7px 26px 7px 0', fontSize: 14, color: '#111', outline: 'none', background: 'transparent',
-                      }}
-                    />
-                  </div>
-
-                  {fpError && (
-                    <p style={{ color: '#e94560', fontSize: 12, marginBottom: 10 }}>{fpError}</p>
-                  )}
-
-                  <button
-                    onClick={async () => {
-                      setFpError('')
-                      if (!fpEmail.trim()) { setFpError('Email is required.'); return }
-                      if (!EMAIL_RE.test(fpEmail.trim())) { setFpError('Please enter a valid email address.'); return }
-                      setFpLoading(true)
-                      await new Promise(r => setTimeout(r, 800))
-                      setFpStep(2)
-                      setFpLoading(false)
-                    }}
-                    disabled={fpLoading}
-                    style={{
-                      width: '100%', padding: 11, background: '#111', border: 'none', borderRadius: 8,
-                      color: '#fff', fontSize: 14, fontWeight: 600, cursor: fpLoading ? 'default' : 'pointer',
-                      marginTop: 2, opacity: fpLoading ? 0.7 : 1,
-                    }}
-                  >
-                    {fpLoading ? 'Sending...' : 'Send Reset Code'}
-                  </button>
-
-                  <div style={{ textAlign: 'center', marginTop: 14, fontSize: 12, color: '#aaa' }}>
-                    Remembered it?{' '}
-                    <span
-                      onClick={() => { setView('login'); setFpStep(1); setFpError('') }}
-                      style={{ color: '#111', fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      Back to login
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {fpStep === 2 && (
-                <>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#111', marginBottom: 3 }}>
-                    Reset password
-                  </div>
-                  <div style={{ fontSize: 12, color: '#999', marginBottom: 14 }}>
-                    A reset code was sent to <strong>{fpEmail}</strong>
-                  </div>
-
-                  <div style={{ position: 'relative', marginBottom: 10 }}>
-                    <label
-                      style={{
-                        fontSize: 11, color: '#666', marginBottom: 3, display: 'block',
-                        textTransform: 'uppercase', letterSpacing: '0.4px',
-                      }}
-                    >
-                      Reset code
-                    </label>
-                    <input
-                      type="text"
-                      value={fpOtp}
-                      onChange={e => setFpOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="Enter 6-digit code"
-                      autoComplete="off"
-                      style={{
-                        width: '100%', border: 'none', borderBottom: '1.5px solid #ddd',
-                        padding: '7px 26px 7px 0', fontSize: 14, color: '#111', outline: 'none', background: 'transparent',
-                        letterSpacing: 6, fontWeight: 600,
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ position: 'relative', marginBottom: 10 }}>
-                    <label
-                      style={{
-                        fontSize: 11, color: '#666', marginBottom: 3, display: 'block',
-                        textTransform: 'uppercase', letterSpacing: '0.4px',
-                      }}
-                    >
-                      New password
-                    </label>
-                    <input
-                      type={showPw ? 'text' : 'password'}
-                      value={fpNewPassword}
-                      onChange={e => setFpNewPassword(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="off"
-                      style={{
-                        width: '100%', border: 'none', borderBottom: '1.5px solid #ddd',
-                        padding: '7px 26px 7px 0', fontSize: 14, color: '#111', outline: 'none', background: 'transparent',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPw(p => !p)}
-                      aria-label="Toggle password visibility"
-                      style={{
-                        position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
-                        background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 15, padding: 0,
-                      }}
-                    >
-                      {showPw ? <Eye size={15} /> : <EyeOff size={15} />}
-                    </button>
-                  </div>
-
-                  <div style={{ position: 'relative', marginBottom: 8 }}>
-                    <label
-                      style={{
-                        fontSize: 11, color: '#666', marginBottom: 3, display: 'block',
-                        textTransform: 'uppercase', letterSpacing: '0.4px',
-                      }}
-                    >
-                      Confirm password
-                    </label>
-                    <input
-                      type={showConfirm ? 'text' : 'password'}
-                      value={fpConfirmPassword}
-                      onChange={e => setFpConfirmPassword(e.target.value)}
-                      placeholder="Repeat new password"
-                      autoComplete="off"
-                      style={{
-                        width: '100%', border: 'none', borderBottom: '1.5px solid #ddd',
-                        padding: '7px 26px 7px 0', fontSize: 14, color: '#111', outline: 'none', background: 'transparent',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(p => !p)}
-                      aria-label="Toggle confirm password visibility"
-                      style={{
-                        position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
-                        background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 15, padding: 0,
-                      }}
-                    >
-                      {showConfirm ? <Eye size={15} /> : <EyeOff size={15} />}
-                    </button>
-                  </div>
-                  <div style={{ fontSize: 11, color: '#bbb', marginBottom: 6 }}>
-                    Must be 8+ characters with a number and a special character.
-                  </div>
-
-                  {fpError && (
-                    <p style={{ color: '#e94560', fontSize: 12, marginBottom: 8 }}>{fpError}</p>
-                  )}
-
-                  <button
-                    onClick={async () => {
-                      setFpError('')
-                      if (!fpOtp || fpOtp.length < 6) { setFpError('Enter the 6-digit code.'); return }
-                      if (fpNewPassword !== fpConfirmPassword) { setFpError('Passwords do not match.'); return }
-                      setFpLoading(true)
-                      await new Promise(r => setTimeout(r, 800))
-                      setFpStep(3)
-                      setFpLoading(false)
-                    }}
-                    disabled={fpLoading}
-                    style={{
-                      width: '100%', padding: 11, background: '#111', border: 'none', borderRadius: 8,
-                      color: '#fff', fontSize: 14, fontWeight: 600, cursor: fpLoading ? 'default' : 'pointer',
-                      marginTop: 0, opacity: fpLoading ? 0.7 : 1,
-                    }}
-                  >
-                    {fpLoading ? 'Resetting...' : 'Reset Password'}
-                  </button>
-                </>
-              )}
-
-              {fpStep === 3 && (
-                <>
-                  <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                    <div style={{ fontSize: 40, marginBottom: 10 }}>✓</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: '#111', marginBottom: 4 }}>
-                      Password reset
-                    </div>
-                    <p style={{ fontSize: 13, color: '#1E8449', fontWeight: 600 }}>
-                      Your password has been reset successfully!
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => { setView('login'); setFpStep(1); setFpOtp(''); setFpNewPassword(''); setFpConfirmPassword('') }}
-                    style={{
-                      width: '100%', padding: 11, background: '#111', border: 'none', borderRadius: 8,
-                      color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 2,
-                    }}
-                  >
-                    Back to login
-                  </button>
-                </>
-              )}
-            </div>
-
-            <div style={{ width: '50%', background: '#dde0ee', order: 2, flexShrink: 0 }}>
-              <BuildingScene
-                mode="login"
-                fieldsReady={fpEmail.trim().length > 0 || fpStep > 1}
-                loginClicked={fpStep >= 2}
-                passwordFocused={fpStep === 2 && (showPw || showConfirm)}
-                passwordVisible={showPw}
-              />
-            </div>
-          </>
-        )}
-      </div>
+          </div>
     </div>
   )
 }

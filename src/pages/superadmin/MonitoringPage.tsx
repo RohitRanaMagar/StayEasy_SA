@@ -442,14 +442,9 @@ export default function MonitoringPage() {
   return (
     <div className="space-y-3">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
-            Monitoring
-          </h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">Real-time platform monitoring, alerts, and uptime tracking</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+        <div className="flex items-center gap-2 sm:ml-auto">
           <select className="text-[11px] border border-gray-200 rounded-lg px-2 py-1.5 text-gray-500 outline-none">
             <option>Last 24 Hours</option>
             <option>Last 7 Days</option>

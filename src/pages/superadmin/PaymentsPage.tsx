@@ -428,14 +428,8 @@ export default function PaymentsPage() {
     <PageTransition>
     <div className="space-y-3">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
-            Payments
-          </h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">Track transactions, manage refunds, and reconcile revenue</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 sm:ml-auto">
           <AdvancedButton
             variant="outline" size="md"
             icon={<Download size={13} />}

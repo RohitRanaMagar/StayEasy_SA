@@ -202,14 +202,18 @@ export default function LogsPage() {
     <PageTransition>
     <div className="space-y-3">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
-            Logs
-          </h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">View and search system logs across all services</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="relative w-full sm:w-64">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
+            <input
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+              placeholder="Search logs..."
+              className="w-full pl-8 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-lg outline-none focus:border-blue-300"
+            />
+          </div>
+
+        <div className="flex items-center gap-2 sm:ml-auto">
           <AdvancedButton
             variant="outline" size="md"
             icon={<RefreshCw size={13} />}
@@ -244,51 +248,34 @@ export default function LogsPage() {
       </div>
 
       {/* ── Stats + Filters ────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
+<div className="bg-white rounded-xl border border-gray-100 p-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
           <LevelStats logs={systemLogs} />
-          <div className="relative w-full sm:w-64">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
-            <input
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1) }}
-              placeholder="Search logs..."
-              className="w-full pl-8 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-lg outline-none focus:border-blue-300"
-            />
+        </div>
+
+        {/* Filters row */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-gray-400">Level:</span>
+            <select value={levelFilter} onChange={e => handleLevelFilter(e.target.value as typeof levelFilter)}
+              className="px-2 py-1 text-[10px] font-medium rounded-md bg-white border border-gray-200 text-gray-600 outline-none focus:border-[#2E86AB] focus:ring-2 focus:ring-[#2E86AB]/20 cursor-pointer transition-all">
+              <option value="all">All</option>
+              {(['error', 'warn', 'info', 'debug'] as const).map(level => (
+                <option key={level} value={level}>{levelConfig[level].label}</option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        {/* Level pills */}
-        <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          <span className="text-[10px] text-gray-400 mr-1">Level:</span>
-          <button onClick={() => handleLevelFilter('all')}
-            className={`px-2.5 py-1 text-[10px] font-medium rounded-md transition-all ${levelFilter === 'all' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-            All
-          </button>
-          {(['error', 'warn', 'info', 'debug'] as const).map(level => {
-            const lc = levelConfig[level]
-            return (
-              <button key={level} onClick={() => handleLevelFilter(level)}
-                className={`px-2.5 py-1 text-[10px] font-medium rounded-md transition-all ${levelFilter === level ? `${lc.bg} ${lc.text}` : 'text-gray-500 hover:bg-gray-100'}`}>
-                {lc.label}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Source filter */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] text-gray-400 mr-1">Source:</span>
-          <button onClick={() => { setSourceFilter('all'); setPage(1) }}
-            className={`px-2.5 py-1 text-[10px] font-medium rounded-md transition-all ${sourceFilter === 'all' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-            All
-          </button>
-          {sources.map(src => (
-            <button key={src} onClick={() => { setSourceFilter(src); setPage(1) }}
-              className={`px-2.5 py-1 text-[10px] font-medium rounded-md transition-all ${sourceFilter === src ? 'bg-gray-800 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-              {src}
-            </button>
-          ))}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-gray-400">Source:</span>
+            <select value={sourceFilter} onChange={e => { setSourceFilter(e.target.value); setPage(1) }}
+              className="px-2 py-1 text-[10px] font-medium rounded-md bg-white border border-gray-200 text-gray-600 outline-none focus:border-[#2E86AB] focus:ring-2 focus:ring-[#2E86AB]/20 cursor-pointer transition-all">
+              <option value="all">All</option>
+              {sources.map(src => (
+                <option key={src} value={src}>{src}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

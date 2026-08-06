@@ -488,14 +488,9 @@ export default function UsageBillingPage() {
     <PageTransition>
     <div className="space-y-3">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
-            Usage & Billing
-          </h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">Monitor resource consumption, track overage charges, and manage tenant quotas</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+        <div className="flex items-center gap-2 sm:ml-auto">
           <select className="text-[11px] border border-gray-200 rounded-lg px-2 py-1.5 text-gray-500 outline-none">
             <option>Current Month</option>
             <option>Last Month</option>
