@@ -1,9 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 @import 'tw-animate-css';
 @import './styles/portal.css';
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@theme {
+  --color-brand: #2E86AB;
+  --color-brand-hover: #1A6B8A;
+  --color-brand-light: rgba(46,134,171,0.1);
+  --color-surface-page: #F1F5F9;
+  --color-surface-card: #FFFFFF;
+  --color-surface-muted: #F8FAFC;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --radius-card: 12px;
+}
 
 :root {
   /* Brand */
