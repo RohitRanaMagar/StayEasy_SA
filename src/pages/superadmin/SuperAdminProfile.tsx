@@ -434,7 +434,7 @@ export default function SuperAdminProfile() {
                         value={newEmail}
                         onChange={e => setNewEmail(e.target.value)}
                         className="flex-1 px-3 py-2 text-[13px] border border-amber-300 rounded-lg outline-none focus:border-[#2E86AB] transition-colors bg-white"
-                        placeholder="your@email.com"
+                        placeholder={profile.email}
                       />
                       <button onClick={handleChangeEmail} className="px-4 py-2 bg-[#2E86AB] text-white rounded-lg text-sm font-medium hover:bg-[#24708f] transition-colors">
                         Update
