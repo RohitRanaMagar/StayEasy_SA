@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Camera, CheckCircle,
   Shield, Lock, Eye, EyeOff,
-  AlertTriangle, Mail, KeyRound, ArrowRight, ArrowLeft,
+  AlertTriangle, KeyRound, ArrowRight, ArrowLeft,
   Settings, Edit, LogIn, Activity,
 } from 'lucide-react'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
@@ -415,25 +415,16 @@ export default function SuperAdminProfile() {
 
             {currentStep === 1 && (
               <div className="space-y-6">
-                <h3 className="text-sm font-semibold text-gray-900">Verification</h3>
-
-                {profile.isSeeded && (
-                  <div className="border border-amber-200 rounded-lg p-4 bg-amber-50">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                        <Mail size={18} className="text-amber-600" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-900">Change Your Email</h4>
-                        <p className="text-xs text-gray-500">You're using a temporary email. Set a real email to continue.</p>
-                      </div>
-                    </div>
+                <div className="border border-gray-200 rounded-lg p-5 space-y-5">
+                  {/* Email */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-500 mb-1">Email</label>
                     <div className="flex gap-2">
                       <input
                         type="email"
                         value={newEmail}
                         onChange={e => setNewEmail(e.target.value)}
-                        className="flex-1 px-3 py-2 text-[13px] border border-amber-300 rounded-lg outline-none focus:border-[#2E86AB] transition-colors bg-white"
+                        className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors"
                         placeholder={profile.email}
                       />
                       <button onClick={handleChangeEmail} className="px-4 py-2 bg-[#2E86AB] text-white rounded-lg text-sm font-medium hover:bg-[#24708f] transition-colors">
@@ -441,17 +432,15 @@ export default function SuperAdminProfile() {
                       </button>
                     </div>
                   </div>
-                )}
 
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center"><Mail size={18} className="text-blue-500" /></div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">Email Verification</h4>
-                      <p className="text-xs text-gray-400">Enter the 6-digit code sent to {profile.email}</p>
-                    </div>
-                    {emailVerified && <span className="ml-auto px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">Verified ✓</span>}
+                  <div className="h-px bg-gray-100" />
+
+                  {/* Verify Account */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-1">Verify Account</h4>
+                    <p className="text-xs text-gray-400">Enter the 6-digit code sent to {newEmail || profile.email}</p>
                   </div>
+
                   {!emailVerified && (
                     <div className="space-y-3">
                       <div className="flex gap-2 items-center">
@@ -469,20 +458,22 @@ export default function SuperAdminProfile() {
                       <button onClick={handleVerifyOtp} className="flex items-center gap-2 px-4 py-2 bg-[#2E86AB] text-white rounded-lg text-sm font-medium hover:bg-[#24708f] transition-colors">Verify Email</button>
                     </div>
                   )}
-                </div>
 
-                {emailVerified && !passwordSet && (
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center"><Lock size={18} className="text-purple-500" /></div>
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-900">Password Setup</h4>
-                        <p className="text-xs text-gray-400">Set a new password for your account</p>
-                      </div>
+                  {emailVerified && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 rounded-lg">
+                      <CheckCircle size={16} className="text-emerald-500" />
+                      <span className="text-sm font-medium text-emerald-700">Email Verified</span>
                     </div>
-                    <div className="space-y-3 max-w-sm">
+                  )}
+
+                  <div className="h-px bg-gray-100" />
+
+                  {/* Password Setup — only after verify */}
+                  {emailVerified && !passwordSet && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-gray-900">New Password</h4>
                       <div>
-                        <label className="block text-[11px] font-medium text-gray-500 mb-1">New Password</label>
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">Password</label>
                         <div className="relative">
                           <input type={showNewPw ? 'text' : 'password'} value={passwords.newPw} onChange={e => setPasswords({ ...passwords, newPw: e.target.value })} className="w-full px-3 py-2 pr-10 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="Enter new password" />
                           <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">{showNewPw ? <EyeOff size={14} /> : <Eye size={14} />}</button>
@@ -496,15 +487,25 @@ export default function SuperAdminProfile() {
                       {passwordError && <p className="text-xs text-red-500 flex items-center gap-1"><AlertTriangle size={12} /> {passwordError}</p>}
                       <button onClick={handleSetPassword} className="flex items-center gap-2 px-4 py-2 bg-[#2E86AB] text-white rounded-lg text-sm font-medium hover:bg-[#24708f] transition-colors"><Lock size={14} /> Set Password</button>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <div className="border border-gray-200 rounded-lg p-4 opacity-60">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center"><Shield size={18} className="text-gray-400" /></div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">Multi-Factor Authentication</h4>
-                      <p className="text-xs text-gray-400">Coming soon</p>
+                  {passwordSet && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 rounded-lg">
+                      <CheckCircle size={16} className="text-emerald-500" />
+                      <span className="text-sm font-medium text-emerald-700">Password Set</span>
+                    </div>
+                  )}
+
+                  <div className="h-px bg-gray-100" />
+
+                  {/* MFA */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center"><Shield size={16} className="text-gray-400" /></div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Multi-Factor Authentication</p>
+                        <p className="text-[11px] text-gray-400">Coming soon</p>
+                      </div>
                     </div>
                   </div>
                 </div>
