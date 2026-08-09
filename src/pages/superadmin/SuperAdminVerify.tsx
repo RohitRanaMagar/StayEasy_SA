@@ -23,7 +23,7 @@ const languages = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portugu
 const dateFormats = ['MMM DD YYYY', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']
 const timeFormats = ['12-hour AM/PM', '24-hour']
 
-export default function SuperAdminProfile() {
+export default function SuperAdminVerify() {
   const navigate = useNavigate()
   const { profile, updateProfile, uploadProfilePicture, changePassword, setProfileComplete, isProfileComplete, platformConfig, setPlatformConfig, dashboardStats, fetchProfile } = useSuperAdminStore()
   const { showToast } = useToast()
@@ -147,7 +147,7 @@ export default function SuperAdminProfile() {
     setProfileComplete(true)
     setIsEditing(false)
     showToast('success', 'Platform configured!')
-    navigate('/superadmin')
+    navigate('/superadmin/profile-setup')
   }
 
   const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

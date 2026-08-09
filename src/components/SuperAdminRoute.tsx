@@ -13,14 +13,15 @@ export function SuperAdminRoute({ children }: SuperAdminRouteProps) {
   const location = useLocation()
 
   const isProfilePage = location.pathname === '/superadmin/profile'
+  const isProfileSetupPage = location.pathname === '/superadmin/profile-setup'
 
   // If user has tempToken but no full token, force them to profile (but not if already there)
-  if (tempToken && !token && !isProfilePage) {
+  if (tempToken && !token && !isProfilePage && !isProfileSetupPage) {
     return <Navigate to="/superadmin/profile" replace />
   }
 
-  // Allow profile page access with tempToken (before full auth)
-  if (tempToken && !token && isProfilePage) {
+  // Allow profile and profile-setup page access with tempToken (before full auth)
+  if (tempToken && !token && (isProfilePage || isProfileSetupPage)) {
     return <>{children}</>
   }
 
@@ -30,7 +31,7 @@ export function SuperAdminRoute({ children }: SuperAdminRouteProps) {
   }
 
   // If profile not complete and NOT on profile page, redirect to profile
-  if (!isProfileComplete && !isProfilePage) {
+  if (!isProfileComplete && !isProfilePage && !isProfileSetupPage) {
     return <Navigate to="/superadmin/profile" replace />
   }
 

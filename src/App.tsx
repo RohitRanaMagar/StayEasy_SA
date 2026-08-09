@@ -32,7 +32,8 @@ const SuperAdminAdminsRoles = lazy(() => import('./pages/superadmin/AdminsRolesP
 const SuperAdminApiKeys = lazy(() => import('./pages/superadmin/ApiKeysPage'))
 const SuperAdminTickets = lazy(() => import('./pages/superadmin/TicketsPage'))
 const SuperAdminAnnouncements = lazy(() => import('./pages/superadmin/AnnouncementsPage'))
-const SuperAdminProfile = lazy(() => import('./pages/superadmin/SuperAdminProfile'))
+const SuperAdminVerify = lazy(() => import('./pages/superadmin/SuperAdminVerify'))
+const SuperAdminProfileSetup = lazy(() => import('./pages/superadmin/SuperAdminProfileSetup'))
 const SuperAdminProfileLayout = lazy(() => import('./components/superadmin/SuperAdminProfileLayout'))
 const SuperAdminNotifications = lazy(() => import('./pages/superadmin/SuperAdminNotifications'))
 const SuperAdminInbox = lazy(() => import('./pages/superadmin/InboxPage'))
@@ -55,10 +56,11 @@ function App() {
           <Route path="/host/reset-password" element={<ResetPassword />} />
           <Route path="/superadmin/login" element={<Login />} />
           <Route path="/superadmin/profile" element={<SuperAdminRoute><SuperAdminProfileLayout /></SuperAdminRoute>}>
-            <Route index element={<SuperAdminProfile />} />
+            <Route index element={<SuperAdminVerify />} />
             <Route path="settings" element={<SuperAdminSettings />} />
             <Route path="notifications" element={<SuperAdminNotifications />} />
           </Route>
+          <Route path="/superadmin/profile-setup" element={<SuperAdminRoute><SuperAdminProfileSetup /></SuperAdminRoute>} />
           <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
             <Route index element={<SuperAdminDashboard />} />
             <Route path="system-health" element={<SuperAdminSystemHealth />} />
