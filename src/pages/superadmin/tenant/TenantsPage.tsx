@@ -359,7 +359,7 @@ export default function TenantsPage() {
 
       {/* Grid View */}
       {view === 'grid' && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {paged.map(t => (
             <div key={t.id}
               className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
@@ -383,7 +383,7 @@ export default function TenantsPage() {
                   <Star size={12} className="fill-amber-400" /> <span className="font-medium">{t.rating}</span>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3 border-t border-gray-100">
                 <div>
                   <div className="text-lg font-bold text-gray-800">{t.propertiesCount}</div>
                   <div className="text-xs text-gray-400">Properties</div>

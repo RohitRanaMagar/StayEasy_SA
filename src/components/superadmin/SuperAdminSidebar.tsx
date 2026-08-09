@@ -64,7 +64,7 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
             collapsed ? 'justify-center px-0 py-3' : 'px-3 py-2.5'
           } ${
             isActive
-              ? 'bg-[#2E86AB]/20 text-[#57B8D9]'
+              ? 'bg-[#2E86AB]/20 text-[#2E86AB]'
               : 'text-white/60 hover:text-white hover:bg-white/5'
           }`
         }
@@ -86,7 +86,7 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
                 onClick={() => toggleSection(section.label)}
                 className={`w-full flex items-center gap-2 px-3 mb-1.5 rounded-lg transition-all duration-150 ${
                   sectionActive
-                    ? 'text-[#57B8D9]'
+                    ? 'text-[#2E86AB]'
                     : 'text-white/40 hover:text-white/60 hover:bg-white/5'
                 }`}
               >
@@ -119,7 +119,7 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
                       collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'
                     } ${
                       active
-                        ? 'bg-[#2E86AB]/20 text-[#57B8D9]'
+                        ? 'bg-[#2E86AB]/20 text-[#2E86AB]'
                         : 'text-white/50 hover:text-white hover:bg-white/5'
                     }`}
                     title={collapsed ? item.label : undefined}
@@ -145,7 +145,7 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
                             onClick={handleClick}
                             className={`flex items-center gap-3 rounded-lg transition-all duration-150 mb-0.5 px-3 py-1.5 ${
                               isChildActiveNow
-                                ? 'bg-[#2E86AB]/20 text-[#57B8D9]'
+                                ? 'bg-[#2E86AB]/20 text-[#2E86AB]'
                                 : 'text-white/40 hover:text-white hover:bg-white/5'
                             }`}
                           >
@@ -170,7 +170,7 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
                   collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'
                 } ${
                   active
-                    ? 'bg-[#2E86AB]/20 text-[#57B8D9]'
+                    ? 'bg-[#2E86AB]/20 text-[#2E86AB]'
                     : 'text-white/50 hover:text-white hover:bg-white/5'
                 }`}
                 title={collapsed ? item.label : undefined}
@@ -240,7 +240,7 @@ export default function SuperAdminSidebar({ collapsed, onToggle, mobileOpen, onM
           <img src={logo1} alt="ServeIQ" className="w-9 h-9 object-contain shrink-0" />
           <div className="flex flex-col min-w-0">
             <span className="text-[15px] font-bold text-white tracking-tight">
-              Serve<span style={{ color: '#57B8D9' }}>IQ</span>
+              Serve<span style={{ color: '#2E86AB' }}>IQ</span>
             </span>
             <span className="text-[10px] text-white/40 font-medium tracking-wider uppercase">Admin Portal</span>
           </div>
@@ -265,7 +265,7 @@ export default function SuperAdminSidebar({ collapsed, onToggle, mobileOpen, onM
             {!collapsed && (
               <div className="flex flex-col min-w-0">
                 <span className="text-[15px] font-bold text-white tracking-tight">
-                  Serve<span style={{ color: '#57B8D9' }}>IQ</span>
+                  Serve<span style={{ color: '#2E86AB' }}>IQ</span>
                 </span>
                 <span className="text-[10px] text-white/40 font-medium tracking-wider uppercase">Admin Portal</span>
               </div>

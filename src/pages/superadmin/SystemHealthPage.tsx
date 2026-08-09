@@ -486,7 +486,7 @@ export default function SystemHealthPage() {
       </div>
 
       {/* ── Two column: Services + Dependencies ────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {/* Services Status */}
         <div className="xl:col-span-2">
           <div className="bg-white rounded-xl border border-gray-100 p-4">

@@ -219,7 +219,7 @@ function SidebarNav({ onNavigate, onLogout }: { onNavigate?: () => void; onLogou
       <div className="flex items-center gap-3 px-3 mb-4 pb-4 border-b border-white/8">
         <img src={logo1} alt="ServeIQ" className="w-8 h-8 object-contain shrink-0" />
         <span className="text-[14px] font-bold text-white tracking-tight">
-          Serve<span style={{ color: '#57B8D9' }}>IQ</span>
+          Serve<span style={{ color: '#2E86AB' }}>IQ</span>
         </span>
       </div>
       {sidebarItems.map((item) => {
@@ -233,7 +233,7 @@ function SidebarNav({ onNavigate, onLogout }: { onNavigate?: () => void; onLogou
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 mb-0.5 ${
                 isActive
-                  ? 'bg-[#2E86AB]/20 text-[#57B8D9]'
+                  ? 'bg-[#2E86AB]/20 text-[#2E86AB]'
                   : 'text-white/50 hover:text-white hover:bg-white/5'
               }`
             }
