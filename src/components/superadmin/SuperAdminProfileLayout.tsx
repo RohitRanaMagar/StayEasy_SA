@@ -217,9 +217,9 @@ function SidebarNav({ onNavigate, onLogout }: { onNavigate?: () => void; onLogou
   return (
     <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col">
       <div className="flex items-center gap-3 px-3 mb-4 pb-4 border-b border-white/8">
-        <img src={logo1} alt="StayEasy" className="w-8 h-8 object-contain shrink-0" />
+        <img src={logo1} alt="ServeIQ" className="w-8 h-8 object-contain shrink-0" />
         <span className="text-[14px] font-bold text-white tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
-          Stay<span style={{ color: '#57B8D9' }}>Easy</span>
+          Serve<span style={{ color: '#57B8D9' }}>IQ</span>
         </span>
       </div>
       {sidebarItems.map((item) => {

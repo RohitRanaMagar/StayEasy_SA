@@ -791,19 +791,23 @@ export interface TicketMessage {
 }
 
 // ─── Announcements (SA-008) ───────────────────────────────
+export type AnnouncementTarget = 'tenants' | 'property_owners' | 'hosts' | 'admin' | 'all'
+export type AnnouncementChannel = 'email' | 'whatsapp' | 'telegram'
+
 export interface Announcement {
   id: string
   title: string
   message: string
   type: 'info' | 'warning' | 'maintenance' | 'update'
-  target: 'all' | 'selected' | 'plan_based'
-  targetPlans?: ('Free Trial' | 'Basic' | 'Professional' | 'Enterprise')[]
-  targetTenantIds?: string[]
+  target: AnnouncementTarget
+  targetAudience: AnnouncementTarget[]
   sendEmail: boolean
-  sendInApp: boolean
+  sendWhatsApp: boolean
+  sendTelegram: boolean
   status: 'draft' | 'scheduled' | 'sent'
   scheduledAt?: string
   sentAt?: string
   createdAt: string
   sentCount: number
+  deliveredTo?: AnnouncementTarget[]
 }

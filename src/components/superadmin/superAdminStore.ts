@@ -316,7 +316,7 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
   auditLogs: mockAuditLogs,
   profile: {
     fullName: 'SuperAdmin',
-    email: 'admin@stayeasy.com',
+    email: 'admin@ServeIQ.com',
     phone: '+977-9800000000',
     address: 'Kathmandu, Nepal',
     nationality: 'Nepali',
@@ -595,7 +595,13 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
   sendAnnouncement: (id) => {
     set(s => ({
       announcements: s.announcements.map(a =>
-        a.id === id ? { ...a, status: 'sent', sentAt: now(), sentCount: 10 } : a
+        a.id === id ? {
+          ...a,
+          status: 'sent',
+          sentAt: now(),
+          sentCount: 10,
+          deliveredTo: a.targetAudience,
+        } : a
       )
     }))
     const ann = get().announcements.find(a => a.id === id)
@@ -603,7 +609,7 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
       admin: 'SuperAdmin',
       action: 'SEND_ANNOUNCEMENT',
       target: ann?.title || id,
-      details: `Announcement "${ann?.title}" sent to ${ann?.target} audience`,
+      details: `Announcement "${ann?.title}" sent to ${ann?.targetAudience?.join(', ') || ann?.target} audience`,
       category: 'admin',
       severity: 'info',
     })

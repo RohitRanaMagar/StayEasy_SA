@@ -2,17 +2,17 @@ import type { SidebarSection } from '../types/superadmin'
 
 export const sidebarSections: SidebarSection[] = [
   {
+    label: 'TENANTS',
+    items: [
+      { label: 'Tenant List', icon: 'List', path: '/superadmin/tenants' },
+      { label: 'Tenant Analytics', icon: 'BarChart3', path: '/superadmin/tenants/analytics' },
+      { label: 'Tenant Billing', icon: 'CreditCard', path: '/superadmin/tenants/billing' },
+      { label: 'Tenant Onboarding', icon: 'UserPlus', path: '/superadmin/tenants/onboarding' },
+    ],
+  },
+  {
     label: 'PLATFORM',
     items: [
-      {
-        label: 'Tenants', icon: 'Building2',
-        children: [
-          { label: 'Tenant List', icon: 'List', path: '/superadmin/tenants' },
-          { label: 'Tenant Analytics', icon: 'BarChart3', path: '/superadmin/tenants/analytics' },
-          { label: 'Tenant Billing', icon: 'CreditCard', path: '/superadmin/tenants/billing' },
-          { label: 'Tenant Onboarding', icon: 'UserPlus', path: '/superadmin/tenants/onboarding' },
-        ],
-      },
       { label: 'Subscriptions', icon: 'CreditCard', path: '/superadmin/subscriptions' },
       { label: 'Plans', icon: 'Package', path: '/superadmin/plans' },
       { label: 'Payments', icon: 'DollarSign', path: '/superadmin/payments' },

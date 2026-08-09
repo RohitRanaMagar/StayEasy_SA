@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// StayEasy — SuperAdmin Mock Data
+// ServeIQ — SuperAdmin Mock Data
 // Single source of truth for all demo / simulated data used across
 // the SuperAdmin dashboard. Every array below maps 1:1 to an
 // interface in src/types/superadmin.ts.
@@ -250,7 +250,7 @@ export const mockTenants: SuperAdminTenant[] = mockTenantsExtended.map(({
 export const mockPlans: Plan[] = [
   {
     id: 'plan_free', name: 'Free Trial', slug: 'free-trial',
-    description: 'Everything you need to explore StayEasy for 14 days — no card required.',
+    description: 'Everything you need to explore ServeIQ for 14 days — no card required.',
     monthlyPrice: 0, yearlyPrice: 0, popular: false, color: '#6B7280',
     features: [
       { name: 'Property Listings', included: true, limit: 'Up to 5' },
@@ -487,12 +487,12 @@ export const mockMonthlyRevenueBreakdown: MonthlyRevenueBreakdown[] = [
 // ═══════════════════════════════════════════════════════════════
 
 export const mockAdminUsers: AdminUser[] = [
-  { id: 'adm_001', name: 'Aarav Sharma', email: 'aarav@stayeasy.com', role: 'SuperAdmin', status: 'active', lastActive: 'Aug 5, 2026', joinedAt: 'Jan 2, 2024', permissions: ['all'], mfaEnabled: true },
-  { id: 'adm_002', name: 'Priya Koirala', email: 'priya@stayeasy.com', role: 'Admin', status: 'active', lastActive: 'Aug 5, 2026', joinedAt: 'Mar 14, 2024', permissions: ['tenants.read', 'tenants.write', 'billing.read', 'billing.write', 'system.read'], mfaEnabled: true },
-  { id: 'adm_003', name: 'Sandeep Rana', email: 'sandeep@stayeasy.com', role: 'Admin', status: 'active', lastActive: 'Aug 4, 2026', joinedAt: 'Jun 1, 2024', permissions: ['tenants.read', 'tenants.write', 'content.write', 'system.read'], mfaEnabled: false },
-  { id: 'adm_004', name: 'Nisha Gurung', email: 'nisha@stayeasy.com', role: 'Support', status: 'active', lastActive: 'Aug 5, 2026', joinedAt: 'Sep 20, 2024', permissions: ['tenants.read', 'tickets.read', 'tickets.write'], mfaEnabled: false },
-  { id: 'adm_005', name: 'Bikash Tamang', email: 'bikash@stayeasy.com', role: 'ReadOnly', status: 'inactive', lastActive: 'Jun 12, 2026', joinedAt: 'Nov 3, 2024', permissions: ['tenants.read', 'billing.read', 'audit.read'], mfaEnabled: true },
-  { id: 'adm_006', name: 'Anjali Thapa', email: 'anjali@stayeasy.com', role: 'Support', status: 'invited', lastActive: '—', joinedAt: 'Aug 3, 2026', permissions: ['tickets.read', 'tickets.write'], mfaEnabled: false },
+  { id: 'adm_001', name: 'Aarav Sharma', email: 'aarav@ServeIQ.com', role: 'SuperAdmin', status: 'active', lastActive: 'Aug 5, 2026', joinedAt: 'Jan 2, 2024', permissions: ['all'], mfaEnabled: true },
+  { id: 'adm_002', name: 'Priya Koirala', email: 'priya@ServeIQ.com', role: 'Admin', status: 'active', lastActive: 'Aug 5, 2026', joinedAt: 'Mar 14, 2024', permissions: ['tenants.read', 'tenants.write', 'billing.read', 'billing.write', 'system.read'], mfaEnabled: true },
+  { id: 'adm_003', name: 'Sandeep Rana', email: 'sandeep@ServeIQ.com', role: 'Admin', status: 'active', lastActive: 'Aug 4, 2026', joinedAt: 'Jun 1, 2024', permissions: ['tenants.read', 'tenants.write', 'content.write', 'system.read'], mfaEnabled: false },
+  { id: 'adm_004', name: 'Nisha Gurung', email: 'nisha@ServeIQ.com', role: 'Support', status: 'active', lastActive: 'Aug 5, 2026', joinedAt: 'Sep 20, 2024', permissions: ['tenants.read', 'tickets.read', 'tickets.write'], mfaEnabled: false },
+  { id: 'adm_005', name: 'Bikash Tamang', email: 'bikash@ServeIQ.com', role: 'ReadOnly', status: 'inactive', lastActive: 'Jun 12, 2026', joinedAt: 'Nov 3, 2024', permissions: ['tenants.read', 'billing.read', 'audit.read'], mfaEnabled: true },
+  { id: 'adm_006', name: 'Anjali Thapa', email: 'anjali@ServeIQ.com', role: 'Support', status: 'invited', lastActive: '—', joinedAt: 'Aug 3, 2026', permissions: ['tickets.read', 'tickets.write'], mfaEnabled: false },
 ]
 
 const perm = (id: string, name: string, description: string, category: AdminPermission['category']): AdminPermission => ({ id, name, description, category })
@@ -594,7 +594,7 @@ export const mockIntegrationServices: IntegrationService[] = [
       { key: 'publishableKey', label: 'Publishable Key', type: 'text', value: 'pk_live_FAKE_KEY', required: true },
       { key: 'secretKey', label: 'Secret Key', type: 'password', value: 'sk_live_FAKE', required: true },
       { key: 'webhookSecret', label: 'Webhook Secret', type: 'password', value: 'whsec_FAKE', required: false },
-      { key: 'statementDescriptor', label: 'Statement Descriptor', type: 'text', value: 'STAYEASY', required: false },
+      { key: 'statementDescriptor', label: 'Statement Descriptor', type: 'text', value: 'ServeIQ', required: false },
     ],
   },
   {
@@ -606,7 +606,7 @@ export const mockIntegrationServices: IntegrationService[] = [
     ],
   },
   {
-    id: 'int_003', name: 'Booking.com Channel', description: 'Push availability, rates and reservations between StayEasy and Booking.com.',
+    id: 'int_003', name: 'Booking.com Channel', description: 'Push availability, rates and reservations between ServeIQ and Booking.com.',
     category: 'other', status: 'connected', logo: 'B', connectedAt: 'Mar 2, 2025', lastSyncAt: 'Aug 5, 2026 08:58 AM', version: '3.1.0', docsUrl: 'https://developers.booking.com',
     configFields: [
       { key: 'connectionId', label: 'Connection ID', type: 'text', value: 'BCH-2026-88213', required: true },
@@ -627,7 +627,7 @@ export const mockIntegrationServices: IntegrationService[] = [
     category: 'communication', status: 'connected', logo: 'S', connectedAt: 'Jun 25, 2025', lastSyncAt: 'Aug 5, 2026 09:04 AM', version: '1.8.2', docsUrl: 'https://api.slack.com',
     configFields: [
       { key: 'webhookUrl', label: 'Webhook URL', type: 'password', value: 'https://hooks.slack.com/••••', required: true },
-      { key: 'channel', label: 'Channel', type: 'text', value: '#stayeasy-alerts', required: false },
+      { key: 'channel', label: 'Channel', type: 'text', value: '#ServeIQ-alerts', required: false },
       { key: 'notifyOnBooking', label: 'Booking alerts', type: 'toggle', value: 'true', required: false },
     ],
   },
@@ -644,7 +644,7 @@ export const mockIntegrationServices: IntegrationService[] = [
     id: 'int_007', name: 'AWS S3', description: 'Store property images, documents and backup archives.',
     category: 'storage', status: 'connected', logo: 'A', connectedAt: 'Feb 3, 2025', lastSyncAt: 'Aug 5, 2026 08:31 AM', version: '3.0.0', docsUrl: 'https://docs.aws.amazon.com/s3',
     configFields: [
-      { key: 'bucket', label: 'Bucket', type: 'text', value: 'stayeasy-media', required: true },
+      { key: 'bucket', label: 'Bucket', type: 'text', value: 'ServeIQ-media', required: true },
       { key: 'region', label: 'Region', type: 'select', value: 'ap-south-1', required: true, options: ['us-east-1', 'eu-west-1', 'ap-south-1', 'ap-southeast-1'] },
       { key: 'accessKey', label: 'Access Key ID', type: 'text', value: 'AKIA4XQ…', required: true },
     ],
@@ -682,7 +682,7 @@ export const mockAuditLogs: SuperAdminAuditLog[] = [
   { id: 'log_0008', timestamp: 'Aug 4, 2026 03:15 PM', admin: 'Aarav Sharma', action: 'FEATURE_FLAG_ROLLOUT_CHANGED', target: 'Dynamic Pricing', details: 'Rollout for "Dynamic Pricing" changed to 25%', category: 'feature', severity: 'info', metadata: { changes: [{ field: 'rolloutPercent', from: '10', to: '25' }] } },
   { id: 'log_0009', timestamp: 'Aug 4, 2026 11:40 AM', admin: 'System', action: 'BACKUP_COMPLETED', target: 'Database', details: 'Automated nightly backup completed successfully (2.4 GB)', category: 'system', severity: 'info' },
   { id: 'log_0010', timestamp: 'Aug 4, 2026 09:55 AM', admin: 'Sandeep Rana', action: 'ANNOUNCEMENT_SENT', target: 'Scheduled maintenance — Search indexing', details: 'Announcement sent to all tenants (12 reached)', category: 'admin', severity: 'info' },
-  { id: 'log_0011', timestamp: 'Aug 3, 2026 04:30 PM', admin: 'Aarav Sharma', action: 'ADMIN_INVITED', target: 'Anjali Thapa', details: 'Admin "Anjali Thapa" invited with Support role', category: 'admin', severity: 'info', metadata: { tenantEmail: 'anjali@stayeasy.com' } },
+  { id: 'log_0011', timestamp: 'Aug 3, 2026 04:30 PM', admin: 'Aarav Sharma', action: 'ADMIN_INVITED', target: 'Anjali Thapa', details: 'Admin "Anjali Thapa" invited with Support role', category: 'admin', severity: 'info', metadata: { tenantEmail: 'anjali@ServeIQ.com' } },
   { id: 'log_0012', timestamp: 'Aug 3, 2026 02:20 PM', admin: 'Aarav Sharma', action: 'SUBSCRIPTION_CREATED', target: 'Skyline Boutique Hotel', details: 'Subscription created for "Skyline Boutique Hotel" on Professional plan', category: 'billing', severity: 'info', metadata: { requestMethod: 'POST', requestPath: '/api/subscriptions' } },
   { id: 'log_0013', timestamp: 'Aug 2, 2026 05:25 PM', admin: 'Priya Koirala', action: 'TENANT_CREATED', target: 'Annapurna Base Camp Inn', details: 'Tenant "Annapurna Base Camp Inn" created with Free Trial plan', category: 'tenant', severity: 'info', metadata: { requestMethod: 'POST', requestPath: '/api/tenants', changes: [{ field: 'status', from: '—', to: 'Active' }] } },
   { id: 'log_0014', timestamp: 'Aug 2, 2026 11:02 AM', admin: 'System', action: 'RATE_LIMIT_ENFORCED', target: 'Budget Stay Chitwan', details: 'Rate limit triggered — 342 requests within 1 minute', category: 'system', severity: 'warning', metadata: { tenantEmail: 'hello@budgetstay.com' } },
@@ -713,14 +713,14 @@ export const mockFeatureFlagCategories: FeatureFlagCategory[] = [
 ]
 
 export const mockFeatureFlags: SuperAdminFeatureFlag[] = [
-  { id: 'ff_001', feature: 'Multi-Language Support', status: true, description: 'Allow tenants to publish sites and dashboards in Nepali, English, Hindi and more.', updatedAt: 'Jul 12, 2026', category: 'Localization', scope: 'global', rolloutPercent: 100, docsUrl: 'https://docs.stayeasy.com/features/multi-language' },
-  { id: 'ff_002', feature: 'Channel Manager', status: true, description: 'Two-way OTA sync with Booking.com, Expedia and Agoda.', updatedAt: 'Jun 30, 2026', category: 'Integrations', scope: 'global', rolloutPercent: 100, dependencies: ['ff_004'], docsUrl: 'https://docs.stayeasy.com/features/channel-manager' },
-  { id: 'ff_003', feature: 'Advanced Analytics', status: true, description: 'Revenue dashboards, occupancy forecasts and cohort reports.', updatedAt: 'Jul 22, 2026', category: 'Analytics', scope: 'global', rolloutPercent: 80, dependencies: ['ff_004'], docsUrl: 'https://docs.stayeasy.com/features/analytics' },
-  { id: 'ff_004', feature: 'Restaurant Module', status: false, description: 'Table management, menu builder and F&B billing for on-site restaurants.', updatedAt: 'May 18, 2026', category: 'Modules', scope: 'per-tenant', docsUrl: 'https://docs.stayeasy.com/features/restaurant' },
-  { id: 'ff_005', feature: 'Custom Domains', status: true, description: 'Serve tenant booking engines on their own domains with SSL.', updatedAt: 'Jun 8, 2026', category: 'Branding', scope: 'global', rolloutPercent: 50, dependencies: ['ff_001'], docsUrl: 'https://docs.stayeasy.com/features/custom-domains' },
-  { id: 'ff_006', feature: 'Dynamic Pricing', status: false, description: 'ML-based rate recommendations based on demand and seasonality.', updatedAt: 'Aug 4, 2026', category: 'AI & Automation', scope: 'global', rolloutPercent: 25, docsUrl: 'https://docs.stayeasy.com/features/dynamic-pricing' },
-  { id: 'ff_007', feature: 'Guest Mobile App', status: true, description: 'White-labeled guest app for bookings, check-in and concierge.', updatedAt: 'Jul 5, 2026', category: 'Mobile', scope: 'global', rolloutPercent: 25, docsUrl: 'https://docs.stayeasy.com/features/guest-app' },
-  { id: 'ff_008', feature: 'Loyalty Program', status: false, description: 'Points, tiers and rewards engine for returning guests.', updatedAt: 'Apr 20, 2026', category: 'Modules', scope: 'per-tenant', docsUrl: 'https://docs.stayeasy.com/features/loyalty' },
+  { id: 'ff_001', feature: 'Multi-Language Support', status: true, description: 'Allow tenants to publish sites and dashboards in Nepali, English, Hindi and more.', updatedAt: 'Jul 12, 2026', category: 'Localization', scope: 'global', rolloutPercent: 100, docsUrl: 'https://docs.ServeIQ.com/features/multi-language' },
+  { id: 'ff_002', feature: 'Channel Manager', status: true, description: 'Two-way OTA sync with Booking.com, Expedia and Agoda.', updatedAt: 'Jun 30, 2026', category: 'Integrations', scope: 'global', rolloutPercent: 100, dependencies: ['ff_004'], docsUrl: 'https://docs.ServeIQ.com/features/channel-manager' },
+  { id: 'ff_003', feature: 'Advanced Analytics', status: true, description: 'Revenue dashboards, occupancy forecasts and cohort reports.', updatedAt: 'Jul 22, 2026', category: 'Analytics', scope: 'global', rolloutPercent: 80, dependencies: ['ff_004'], docsUrl: 'https://docs.ServeIQ.com/features/analytics' },
+  { id: 'ff_004', feature: 'Restaurant Module', status: false, description: 'Table management, menu builder and F&B billing for on-site restaurants.', updatedAt: 'May 18, 2026', category: 'Modules', scope: 'per-tenant', docsUrl: 'https://docs.ServeIQ.com/features/restaurant' },
+  { id: 'ff_005', feature: 'Custom Domains', status: true, description: 'Serve tenant booking engines on their own domains with SSL.', updatedAt: 'Jun 8, 2026', category: 'Branding', scope: 'global', rolloutPercent: 50, dependencies: ['ff_001'], docsUrl: 'https://docs.ServeIQ.com/features/custom-domains' },
+  { id: 'ff_006', feature: 'Dynamic Pricing', status: false, description: 'ML-based rate recommendations based on demand and seasonality.', updatedAt: 'Aug 4, 2026', category: 'AI & Automation', scope: 'global', rolloutPercent: 25, docsUrl: 'https://docs.ServeIQ.com/features/dynamic-pricing' },
+  { id: 'ff_007', feature: 'Guest Mobile App', status: true, description: 'White-labeled guest app for bookings, check-in and concierge.', updatedAt: 'Jul 5, 2026', category: 'Mobile', scope: 'global', rolloutPercent: 25, docsUrl: 'https://docs.ServeIQ.com/features/guest-app' },
+  { id: 'ff_008', feature: 'Loyalty Program', status: false, description: 'Points, tiers and rewards engine for returning guests.', updatedAt: 'Apr 20, 2026', category: 'Modules', scope: 'per-tenant', docsUrl: 'https://docs.ServeIQ.com/features/loyalty' },
 ]
 
 export const mockTenantOverrides: TenantFeatureOverride[] = [
@@ -824,7 +824,7 @@ export const mockTickets: SupportTicket[] = [
   },
   {
     id: 'tkt_008', tenantId: 'tnt_011', tenantName: 'Skyline Boutique Hotel',
-    subject: 'Custom domain not resolving', description: 'Our custom domain has been propagating for 24h but still shows the default StayEasy URL.',
+    subject: 'Custom domain not resolving', description: 'Our custom domain has been propagating for 24h but still shows the default ServeIQ URL.',
     category: 'technical', priority: 'high', status: 'in_progress', assignedTo: 'Aarav Sharma',
     createdAt: 'Aug 2, 2026 11:55 AM', updatedAt: 'Aug 2, 2026 04:10 PM',
     messages: [
@@ -839,12 +839,12 @@ export const mockTickets: SupportTicket[] = [
 // ═══════════════════════════════════════════════════════════════
 
 export const mockAnnouncements: Announcement[] = [
-  { id: 'ann_001', title: 'Scheduled maintenance — Search indexing', message: 'Search indexing will be rebuilt on August 15 between 02:00–03:00 AM (NPT). Property search may be briefly unavailable. No action needed.', type: 'maintenance', target: 'all', sendEmail: true, sendInApp: true, status: 'scheduled', scheduledAt: 'Aug 15, 2026 02:00 AM', createdAt: 'Aug 4, 2026', sentCount: 0 },
-  { id: 'ann_002', title: 'New: Multi-language support is live', message: 'Tenants on Professional and Enterprise plans can now publish booking sites in Nepali, English and Hindi. See the docs for setup.', type: 'update', target: 'plan_based', targetPlans: ['Professional', 'Enterprise'], sendEmail: true, sendInApp: true, status: 'sent', sentAt: 'Jul 13, 2026 09:00 AM', createdAt: 'Jul 12, 2026', sentCount: 34 },
-  { id: 'ann_003', title: 'Stripe fee schedule update', message: 'Effective September 1, international card transactions will incur an additional 0.5% cross-border fee. Updated pricing is available in the billing docs.', type: 'warning', target: 'all', sendEmail: true, sendInApp: false, status: 'scheduled', scheduledAt: 'Aug 10, 2026 10:00 AM', createdAt: 'Aug 3, 2026', sentCount: 0 },
-  { id: 'ann_004', title: 'Welcome, new tenants! 👋', message: 'A warm welcome to our newest properties. Complete your onboarding checklist to get the most out of StayEasy.', type: 'info', target: 'selected', targetTenantIds: ['tnt_005', 'tnt_010'], sendEmail: true, sendInApp: true, status: 'draft', createdAt: 'Aug 5, 2026', sentCount: 0 },
-  { id: 'ann_005', title: 'New integration: Twilio SMS', message: 'Guest booking confirmations and check-in reminders via SMS are now available. Connect your Twilio account under Integrations.', type: 'update', target: 'plan_based', targetPlans: ['Professional', 'Enterprise'], sendEmail: false, sendInApp: true, status: 'sent', sentAt: 'Jul 25, 2026 11:00 AM', createdAt: 'Jul 24, 2026', sentCount: 34 },
-  { id: 'ann_006', title: 'Dynamic Pricing beta — sign up', message: 'Enterprise customers can join the Dynamic Pricing beta for ML-based rate recommendations. Reply to this announcement or open a ticket.', type: 'info', target: 'plan_based', targetPlans: ['Enterprise'], sendEmail: false, sendInApp: true, status: 'draft', createdAt: 'Aug 4, 2026', sentCount: 0 },
+  { id: 'ann_001', title: 'Scheduled maintenance — Search indexing', message: 'Search indexing will be rebuilt on August 15 between 02:00–03:00 AM (NPT). Property search may be briefly unavailable. No action needed.', type: 'maintenance', target: 'all', targetAudience: ['tenants', 'hosts', 'property_owners', 'admin'], sendEmail: true, sendWhatsApp: false, sendTelegram: true, status: 'scheduled', scheduledAt: 'Aug 15, 2026 02:00 AM', createdAt: 'Aug 4, 2026', sentCount: 0 },
+  { id: 'ann_002', title: 'New: Multi-language support is live', message: 'Tenants on Professional and Enterprise plans can now publish booking sites in Nepali, English and Hindi. See the docs for setup.', type: 'update', target: 'tenants', targetAudience: ['tenants'], sendEmail: true, sendWhatsApp: true, sendTelegram: false, status: 'sent', sentAt: 'Jul 13, 2026 09:00 AM', createdAt: 'Jul 12, 2026', sentCount: 34, deliveredTo: ['tenants'] },
+  { id: 'ann_003', title: 'Stripe fee schedule update', message: 'Effective September 1, international card transactions will incur an additional 0.5% cross-border fee. Updated pricing is available in the billing docs.', type: 'warning', target: 'all', targetAudience: ['tenants', 'hosts', 'property_owners', 'admin'], sendEmail: true, sendWhatsApp: false, sendTelegram: false, status: 'scheduled', scheduledAt: 'Aug 10, 2026 10:00 AM', createdAt: 'Aug 3, 2026', sentCount: 0 },
+  { id: 'ann_004', title: 'Welcome, new tenants! 👋', message: 'A warm welcome to our newest properties. Complete your onboarding checklist to get the most out of ServeIQ.', type: 'info', target: 'tenants', targetAudience: ['tenants'], sendEmail: true, sendWhatsApp: true, sendTelegram: false, status: 'draft', createdAt: 'Aug 5, 2026', sentCount: 0 },
+  { id: 'ann_005', title: 'New integration: Twilio SMS', message: 'Guest booking confirmations and check-in reminders via SMS are now available. Connect your Twilio account under Integrations.', type: 'update', target: 'tenants', targetAudience: ['tenants', 'hosts'], sendEmail: false, sendWhatsApp: true, sendTelegram: true, status: 'sent', sentAt: 'Jul 25, 2026 11:00 AM', createdAt: 'Jul 24, 2026', sentCount: 34, deliveredTo: ['tenants', 'hosts'] },
+  { id: 'ann_006', title: 'Dynamic Pricing beta — sign up', message: 'Enterprise customers can join the Dynamic Pricing beta for ML-based rate recommendations. Reply to this announcement or open a ticket.', type: 'info', target: 'hosts', targetAudience: ['hosts'], sendEmail: false, sendWhatsApp: false, sendTelegram: true, status: 'draft', createdAt: 'Aug 4, 2026', sentCount: 0 },
 ]
 
 // ═══════════════════════════════════════════════════════════════
@@ -852,24 +852,24 @@ export const mockAnnouncements: Announcement[] = [
 // ═══════════════════════════════════════════════════════════════
 
 export const mockSettings: PlatformSettings = {
-  platformName: 'StayEasy',
-  platformUrl: 'https://stayeasy.com',
-  supportEmail: 'support@stayeasy.com',
+  platformName: 'ServeIQ',
+  platformUrl: 'https://ServeIQ.com',
+  supportEmail: 'support@ServeIQ.com',
   supportPhone: '+977-1-5900000',
   timezone: 'Asia/Kathmandu',
   dateFormat: 'MMM DD, YYYY',
   timeFormat: '12-hour AM/PM',
   defaultLanguage: 'English',
   maintenanceMode: false,
-  maintenanceMessage: 'StayEasy is under scheduled maintenance. We will be back shortly.',
-  smtpHost: 'smtp.stayeasy.com',
+  maintenanceMessage: 'ServeIQ is under scheduled maintenance. We will be back shortly.',
+  smtpHost: 'smtp.ServeIQ.com',
   smtpPort: 587,
-  smtpUsername: 'noreply@stayeasy.com',
+  smtpUsername: 'noreply@ServeIQ.com',
   smtpPassword: '••••••••',
   smtpEncryption: 'tls',
-  fromEmail: 'noreply@stayeasy.com',
-  fromName: 'StayEasy',
-  sendTestEmailTo: 'aarav@stayeasy.com',
+  fromEmail: 'noreply@ServeIQ.com',
+  fromName: 'ServeIQ',
+  sendTestEmailTo: 'aarav@ServeIQ.com',
   maxEmailsPerHour: 2000,
   passwordMinLength: 8,
   passwordRequireSpecialChars: true,
@@ -971,8 +971,8 @@ export const mockNetworkMetrics: ResourceMetric = hourlyMetric('Network', 'Mbps'
 export const mockHourlyLabels: string[] = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
 
 export const mockDependencyChecks: DependencyCheck[] = [
-  { name: 'PostgreSQL', endpoint: 'postgres.stayeasy.internal', status: 'healthy', latency: '32ms', lastChecked: '2 min ago' },
-  { name: 'Redis Cache', endpoint: 'redis.stayeasy.internal', status: 'healthy', latency: '1.2ms', lastChecked: '2 min ago' },
+  { name: 'PostgreSQL', endpoint: 'postgres.ServeIQ.internal', status: 'healthy', latency: '32ms', lastChecked: '2 min ago' },
+  { name: 'Redis Cache', endpoint: 'redis.ServeIQ.internal', status: 'healthy', latency: '1.2ms', lastChecked: '2 min ago' },
   { name: 'Stripe API', endpoint: 'api.stripe.com', status: 'healthy', latency: '210ms', lastChecked: '4 min ago' },
   { name: 'Razorpay API', endpoint: 'api.razorpay.com', status: 'slow', latency: '640ms', lastChecked: '4 min ago' },
   { name: 'AWS S3', endpoint: 's3.amazonaws.com', status: 'healthy', latency: '48ms', lastChecked: '5 min ago' },
@@ -996,14 +996,14 @@ export const mockSystemLogs: SystemLogEntry[] = [
   { id: 'syslog_003', timestamp: '2026-08-05 09:13:11', level: 'info', source: 'booking-engine', message: 'Booking #BK-77231 created for Royal Palace Hotel', details: 'Room Deluxe King — Aug 12 to Aug 14 — NPR 24,500', userId: 'tnt_008', requestId: 'req_4b5c6d' },
   { id: 'syslog_004', timestamp: '2026-08-05 09:12:40', level: 'debug', source: 'cache', message: 'Cache miss for rate_limit:key_001 — recalculating', details: 'Redis GET returned nil', requestId: 'req_7h8j9k' },
   { id: 'syslog_005', timestamp: '2026-08-05 09:12:05', level: 'error', source: 'database', message: 'Connection pool at 88% — autoscaler engaged', details: 'max_connections=100, active=88, idle=4', requestId: 'req_2m3n4p' },
-  { id: 'syslog_006', timestamp: '2026-08-05 09:10:33', level: 'info', source: 'auth-service', message: 'Login success for aarav@stayeasy.com (MFA ok)', details: 'Issued access token, TTL 45 min', ip: '192.168.1.100', userId: 'adm_001', requestId: 'req_5q6r7s' },
+  { id: 'syslog_006', timestamp: '2026-08-05 09:10:33', level: 'info', source: 'auth-service', message: 'Login success for aarav@ServeIQ.com (MFA ok)', details: 'Issued access token, TTL 45 min', ip: '192.168.1.100', userId: 'adm_001', requestId: 'req_5q6r7s' },
   { id: 'syslog_007', timestamp: '2026-08-05 09:08:51', level: 'warn', source: 'webhook', message: 'Channel sync webhook (wh_003) failing — 214 failures / 7 days', details: 'Endpoint returned 408 on last 12 attempts', requestId: 'req_8t9u0v' },
   { id: 'syslog_008', timestamp: '2026-08-05 09:05:20', level: 'info', source: 'background-jobs', message: 'Job email_4821 completed in 1.2s', details: 'Queue email-queue — 4 workers active', requestId: 'req_1w2x3y' },
   { id: 'syslog_009', timestamp: '2026-08-05 09:03:47', level: 'debug', source: 'api-server', message: 'Request ID tracing enabled for /api/v1/bookings', details: 'sample_rate=0.1', requestId: 'req_4z5a6b' },
   { id: 'syslog_010', timestamp: '2026-08-05 08:58:12', level: 'info', source: 'search-index', message: 'Index updated for property tnt_008 (2,140 docs)', details: 'Indexing latency 310ms', requestId: 'req_7c8d9e' },
   { id: 'syslog_011', timestamp: '2026-08-05 08:52:40', level: 'warn', source: 'cdn', message: 'Edge node ap-south-1 serving stale assets', details: 'Purged cache entry cache_asset_8821', requestId: 'req_0f1g2h' },
   { id: 'syslog_012', timestamp: '2026-08-05 08:44:02', level: 'info', source: 'payment-gateway', message: 'Charge succeeded txn_0420 — $99.00 (Hotel Everest Kathmandu)', details: 'Stripe ch_3Qz… — card visa •••• 4242', requestId: 'req_3i4j5k' },
-  { id: 'syslog_013', timestamp: '2026-08-05 08:40:15', level: 'error', source: 'email-service', message: 'SMTP timeout sending digest to support@stayeasy.com', details: 'Connection reset by peer — retrying (2/3)', requestId: 'req_6l7m8n' },
+  { id: 'syslog_013', timestamp: '2026-08-05 08:40:15', level: 'error', source: 'email-service', message: 'SMTP timeout sending digest to support@ServeIQ.com', details: 'Connection reset by peer — retrying (2/3)', requestId: 'req_6l7m8n' },
   { id: 'syslog_014', timestamp: '2026-08-05 08:31:55', level: 'info', source: 'background-jobs', message: 'Nightly backup completed — 2.4 GB to S3', details: 'backup_2026-08-05.zip — checksum ok', requestId: 'req_9p0q1r' },
   { id: 'syslog_015', timestamp: '2026-08-05 08:22:31', level: 'info', source: 'auth-service', message: 'Password reset requested for hello@budgetstay.com', details: 'Reset link sent', ip: '103.44.55.221', requestId: 'req_2s3t4u' },
   { id: 'syslog_016', timestamp: '2026-08-05 08:15:09', level: 'debug', source: 'booking-engine', message: 'Pricing engine cache warmed for tnt_012', details: '12 rate plans cached', requestId: 'req_5v6w7x' },
@@ -1080,12 +1080,12 @@ export const mockActiveAlerts: ActiveAlert[] = [
 ]
 
 export const mockUptimeChecks: UptimeCheck[] = [
-  { id: 'up_001', name: 'Dashboard API', endpoint: 'https://api.stayeasy.com/health', status: 'up', responseTimeMs: 84, uptime7d: 99.99, uptime30d: 99.98, lastChecked: '1 min ago', region: 'ap-south-1' },
-  { id: 'up_002', name: 'Booking Engine', endpoint: 'https://booking.stayeasy.com/health', status: 'up', responseTimeMs: 96, uptime7d: 99.97, uptime30d: 99.95, lastChecked: '1 min ago', region: 'ap-south-1' },
-  { id: 'up_003', name: 'Webhooks Ingress', endpoint: 'https://api.stayeasy.com/webhooks/health', status: 'slow', responseTimeMs: 412, uptime7d: 98.42, uptime30d: 99.21, lastChecked: '2 min ago', region: 'eu-west-1' },
-  { id: 'up_004', name: 'Auth Service', endpoint: 'https://auth.stayeasy.com/health', status: 'up', responseTimeMs: 48, uptime7d: 99.98, uptime30d: 99.99, lastChecked: '1 min ago', region: 'us-east-1' },
-  { id: 'up_005', name: 'CDN Edge', endpoint: 'https://cdn.stayeasy.com/health', status: 'up', responseTimeMs: 28, uptime7d: 100, uptime30d: 100, lastChecked: '1 min ago', region: 'ap-south-1' },
-  { id: 'up_006', name: 'Admin Console', endpoint: 'https://admin.stayeasy.com/health', status: 'down', responseTimeMs: 0, uptime7d: 96.2, uptime30d: 98.8, lastChecked: '3 min ago', region: 'us-east-1' },
+  { id: 'up_001', name: 'Dashboard API', endpoint: 'https://api.ServeIQ.com/health', status: 'up', responseTimeMs: 84, uptime7d: 99.99, uptime30d: 99.98, lastChecked: '1 min ago', region: 'ap-south-1' },
+  { id: 'up_002', name: 'Booking Engine', endpoint: 'https://booking.ServeIQ.com/health', status: 'up', responseTimeMs: 96, uptime7d: 99.97, uptime30d: 99.95, lastChecked: '1 min ago', region: 'ap-south-1' },
+  { id: 'up_003', name: 'Webhooks Ingress', endpoint: 'https://api.ServeIQ.com/webhooks/health', status: 'slow', responseTimeMs: 412, uptime7d: 98.42, uptime30d: 99.21, lastChecked: '2 min ago', region: 'eu-west-1' },
+  { id: 'up_004', name: 'Auth Service', endpoint: 'https://auth.ServeIQ.com/health', status: 'up', responseTimeMs: 48, uptime7d: 99.98, uptime30d: 99.99, lastChecked: '1 min ago', region: 'us-east-1' },
+  { id: 'up_005', name: 'CDN Edge', endpoint: 'https://cdn.ServeIQ.com/health', status: 'up', responseTimeMs: 28, uptime7d: 100, uptime30d: 100, lastChecked: '1 min ago', region: 'ap-south-1' },
+  { id: 'up_006', name: 'Admin Console', endpoint: 'https://admin.ServeIQ.com/health', status: 'down', responseTimeMs: 0, uptime7d: 96.2, uptime30d: 98.8, lastChecked: '3 min ago', region: 'us-east-1' },
 ]
 
 export const mockPerformanceData: PerformancePoint[] = [

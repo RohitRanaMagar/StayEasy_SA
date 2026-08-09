@@ -164,10 +164,10 @@ export default function HostPortalPageNew() {
   const hasRestoredRef = useRef(false)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const draftKey = `stayEasyDraft_${user?.id || user?.email || 'anon'}`
+  const draftKey = `ServeIQDraft_${user?.id || user?.email || 'anon'}`
 
   useEffect(() => {
-    try { localStorage.removeItem('stayEasyDraft') } catch {}
+    try { localStorage.removeItem('ServeIQDraft') } catch {}
   }, [])
 
   useEffect(() => {

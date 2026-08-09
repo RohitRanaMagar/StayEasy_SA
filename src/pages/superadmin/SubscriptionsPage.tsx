@@ -88,11 +88,14 @@ function SubscriptionsTable({ subscriptions, onViewDetails, onSendEmail }:
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
         <h3 className="text-sm font-semibold text-gray-900">Active Subscriptions</h3>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-initial">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
+          <div className="relative flex items-center flex-1 sm:flex-initial">
+            <Search size={14} className="absolute left-3 text-gray-400" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
               placeholder="Search tenant..."
-              className="pl-8 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-lg outline-none focus:border-blue-300 w-full sm:w-48" />
+              className="pl-9 pr-10 py-2.5 text-[13px] bg-white border-2 border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#2E86AB]/20 focus:border-[#2E86AB] shadow-md w-full sm:w-48" />
+            <button className="absolute right-2 p-1.5 bg-[#2E86AB] text-white rounded-lg hover:bg-[#1a6b8a] transition-colors">
+              <Search size={14} />
+            </button>
           </div>
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
             className="text-[11px] border border-gray-200 rounded-lg px-2 py-1.5 text-gray-500 outline-none">

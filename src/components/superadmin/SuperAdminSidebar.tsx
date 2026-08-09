@@ -237,10 +237,10 @@ export default function SuperAdminSidebar({ collapsed, onToggle, mobileOpen, onM
 
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 h-[64px] border-b border-white/8 shrink-0">
-          <img src={logo1} alt="StayEasy" className="w-9 h-9 object-contain shrink-0" />
+          <img src={logo1} alt="ServeIQ" className="w-9 h-9 object-contain shrink-0" />
           <div className="flex flex-col min-w-0">
             <span className="text-[15px] font-bold text-white tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
-              Stay<span style={{ color: '#57B8D9' }}>Easy</span>
+              Serve<span style={{ color: '#57B8D9' }}>IQ</span>
             </span>
             <span className="text-[10px] text-white/40 font-medium tracking-wider uppercase">Admin Portal</span>
           </div>
@@ -261,11 +261,11 @@ export default function SuperAdminSidebar({ collapsed, onToggle, mobileOpen, onM
         {/* Logo + Collapse */}
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-white/8 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <img src={logo1} alt="StayEasy" className="w-9 h-9 object-contain shrink-0" />
+            <img src={logo1} alt="ServeIQ" className="w-9 h-9 object-contain shrink-0" />
             {!collapsed && (
               <div className="flex flex-col min-w-0">
                 <span className="text-[15px] font-bold text-white tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
-                  Stay<span style={{ color: '#57B8D9' }}>Easy</span>
+                  Serve<span style={{ color: '#57B8D9' }}>IQ</span>
                 </span>
                 <span className="text-[10px] text-white/40 font-medium tracking-wider uppercase">Admin Portal</span>
               </div>

@@ -91,7 +91,7 @@ export default function SuperAdminProfile() {
 
   // Step 1: Save Personal Info (via API)
   const handleSavePersonal = async () => {
-    if (profile.isSeeded && formData.email === 'SA@stayeasy.com') {
+    if (profile.isSeeded && formData.email === 'SA@ServeIQ.com') {
       showToast('error', 'You must change your email address before proceeding')
       return
     }
@@ -567,13 +567,13 @@ export default function SuperAdminProfile() {
                         value={formData.email}
                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                         className={`w-full px-3 py-2 text-[13px] border rounded-lg outline-none transition-colors ${
-                          profile.isSeeded && formData.email === 'SA@stayeasy.com'
+                          profile.isSeeded && formData.email === 'SA@ServeIQ.com'
                             ? 'border-red-300 bg-red-50 focus:border-red-400'
                             : 'border-gray-200 focus:border-[#2E86AB]'
                         }`}
                         placeholder="Enter your new email address"
                       />
-                      {profile.isSeeded && formData.email === 'SA@stayeasy.com' && (
+                      {profile.isSeeded && formData.email === 'SA@ServeIQ.com' && (
                         <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
                           <AlertTriangle size={10} />
                           You must change your email before proceeding
@@ -738,11 +738,11 @@ export default function SuperAdminProfile() {
                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Platform Information</h4>
                     <div>
                       <label className="block text-[11px] font-medium text-gray-500 mb-1">Platform Name</label>
-                      <input type="text" value={config.platformName} onChange={e => setConfig({ ...config, platformName: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="e.g. StayEasy" />
+                      <input type="text" value={config.platformName} onChange={e => setConfig({ ...config, platformName: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="e.g. ServeIQ" />
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-gray-500 mb-1">Platform URL</label>
-                      <input type="url" value={config.platformUrl} onChange={e => setConfig({ ...config, platformUrl: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="https://stayeasy.com" />
+                      <input type="url" value={config.platformUrl} onChange={e => setConfig({ ...config, platformUrl: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="https://ServeIQ.com" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -760,7 +760,7 @@ export default function SuperAdminProfile() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-gray-500 mb-1">Support Email</label>
-                      <input type="email" value={config.supportEmail} onChange={e => setConfig({ ...config, supportEmail: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="support@stayeasy.com" />
+                      <input type="email" value={config.supportEmail} onChange={e => setConfig({ ...config, supportEmail: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="support@ServeIQ.com" />
                     </div>
                   </div>
 
@@ -778,7 +778,7 @@ export default function SuperAdminProfile() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-gray-500 mb-1">SMTP Username</label>
-                      <input type="text" value={config.smtpUsername} onChange={e => setConfig({ ...config, smtpUsername: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="noreply@stayeasy.com" />
+                      <input type="text" value={config.smtpUsername} onChange={e => setConfig({ ...config, smtpUsername: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="noreply@ServeIQ.com" />
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-gray-500 mb-1">SMTP Password</label>
@@ -787,11 +787,11 @@ export default function SuperAdminProfile() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[11px] font-medium text-gray-500 mb-1">From Email</label>
-                        <input type="email" value={config.fromEmail} onChange={e => setConfig({ ...config, fromEmail: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="noreply@stayeasy.com" />
+                        <input type="email" value={config.fromEmail} onChange={e => setConfig({ ...config, fromEmail: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="noreply@ServeIQ.com" />
                       </div>
                       <div>
                         <label className="block text-[11px] font-medium text-gray-500 mb-1">From Name</label>
-                        <input type="text" value={config.fromName} onChange={e => setConfig({ ...config, fromName: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="StayEasy" />
+                        <input type="text" value={config.fromName} onChange={e => setConfig({ ...config, fromName: e.target.value })} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" placeholder="ServeIQ" />
                       </div>
                     </div>
                   </div>

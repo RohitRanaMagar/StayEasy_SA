@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const keys = Object.keys(localStorage)
       for (const key of keys) {
-        if (key === 'stayEasyDraft' || key.startsWith('stayEasyDraft_')) {
+        if (key === 'ServeIQDraft' || key.startsWith('ServeIQDraft_')) {
           localStorage.removeItem(key)
         }
       }

@@ -158,11 +158,14 @@ export default function TicketsPage() {
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative flex items-center flex-1">
+            <Search size={14} className="absolute left-3 text-gray-400" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }}
               placeholder="Search tickets..."
-              className="w-full pl-9 pr-3 py-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E86AB]/20 focus:border-[#2E86AB]" />
+              className="w-full pl-9 pr-10 py-2.5 text-[13px] bg-white border-2 border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#2E86AB]/20 focus:border-[#2E86AB] shadow-md" />
+            <button className="absolute right-2 p-1.5 bg-[#2E86AB] text-white rounded-lg hover:bg-[#1a6b8a] transition-colors">
+              <Search size={14} />
+            </button>
           </div>
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as TicketStatus | 'all'); setPage(0) }}
             className="px-3 py-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E86AB]/20">

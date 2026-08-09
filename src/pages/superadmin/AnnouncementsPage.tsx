@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   Search, Plus, ChevronLeft, ChevronRight,
   CheckCircle, Clock, Send, Trash2, Eye, X,
@@ -7,6 +6,9 @@ import {
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { useToast } from '../../components/superadmin/Toast'
 import { PageTransition } from '../../components/superadmin/Animations'
+import NewAnnouncementModal from '../../components/superadmin/NewAnnouncementModal'
+import DeliveryConfirmationPopup from '../../components/superadmin/DeliveryConfirmationPopup'
+import type { AnnouncementTarget } from '../../types/superadmin'
 
 const statusConfig: Record<string, { text: string; bg: string; icon: typeof CheckCircle }> = {
   draft: { text: 'Draft', bg: 'bg-gray-100 text-gray-600', icon: Clock },
@@ -24,9 +26,9 @@ const typeConfig: Record<string, { text: string; bg: string }> = {
 type AnnouncementStatus = 'draft' | 'scheduled' | 'sent'
 
 export default function AnnouncementsPage() {
-  const navigate = useNavigate()
   const { showToast } = useToast()
   const announcements = useSuperAdminStore(s => s.announcements)
+  const addAnnouncement = useSuperAdminStore(s => s.addAnnouncement)
   const sendAnnouncement = useSuperAdminStore(s => s.sendAnnouncement)
   const deleteAnnouncement = useSuperAdminStore(s => s.deleteAnnouncement)
 
@@ -36,6 +38,15 @@ export default function AnnouncementsPage() {
   const perPage = 8
 
   const [previewAnn, setPreviewAnn] = useState<typeof announcements[0] | null>(null)
+  const [showNewModal, setShowNewModal] = useState(false)
+  const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false)
+  const [lastSentData, setLastSentData] = useState<{
+    title: string
+    targetAudience: AnnouncementTarget[]
+    channels: { email: boolean; whatsapp: boolean; telegram: boolean }
+    recipientCount: number
+    sentAt: string
+  } | null>(null)
 
   const filtered = useMemo(() => {
     let result = [...announcements]
@@ -70,13 +81,49 @@ export default function AnnouncementsPage() {
     showToast('success', 'Announcement deleted')
   }
 
+  const handleNewAnnouncement = (data: {
+    title: string
+    message: string
+    type: 'info' | 'warning' | 'maintenance' | 'update'
+    target: AnnouncementTarget
+    targetAudience: AnnouncementTarget[]
+    sendEmail: boolean
+    sendWhatsApp: boolean
+    sendTelegram: boolean
+    status: 'sent' | 'draft' | 'scheduled'
+    scheduledAt?: string
+  }) => {
+    addAnnouncement(data)
+    setShowNewModal(false)
+
+    if (data.status === 'sent') {
+      const now = new Date()
+      const sentAt = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+        ' ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+
+      setLastSentData({
+        title: data.title,
+        targetAudience: data.targetAudience,
+        channels: { email: data.sendEmail, whatsapp: data.sendWhatsApp, telegram: data.sendTelegram },
+        recipientCount: 10,
+        sentAt,
+      })
+      setShowDeliveryConfirm(true)
+      showToast('success', 'Announcement sent successfully')
+    } else if (data.status === 'scheduled') {
+      showToast('success', `Announcement scheduled for ${data.scheduledAt}`)
+    } else {
+      showToast('success', 'Announcement saved as draft')
+    }
+  }
+
   return (
     <PageTransition>
       <div className="space-y-3">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
-          <button onClick={() => navigate('/superadmin/inbox')}
+          <button onClick={() => setShowNewModal(true)}
             className="flex items-center gap-2 px-4 py-2 text-white text-[12px] font-medium rounded-lg sm:ml-auto"
             style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
             <Plus size={14} /> New Announcement
@@ -105,11 +152,14 @@ export default function AnnouncementsPage() {
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative flex items-center flex-1">
+            <Search size={14} className="absolute left-3 text-gray-400" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }}
               placeholder="Search announcements..."
-              className="w-full pl-9 pr-3 py-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E86AB]/20 focus:border-[#2E86AB]" />
+              className="w-full pl-9 pr-10 py-2.5 text-[13px] bg-white border-2 border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#2E86AB]/20 focus:border-[#2E86AB] shadow-md" />
+            <button className="absolute right-2 p-1.5 bg-[#2E86AB] text-white rounded-lg hover:bg-[#1a6b8a] transition-colors">
+              <Search size={14} />
+            </button>
           </div>
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as AnnouncementStatus | 'all'); setPage(0) }}
             className="px-3 py-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E86AB]/20">
@@ -141,7 +191,7 @@ export default function AnnouncementsPage() {
                 ) : paged.map(ann => {
                   const s = statusConfig[ann.status]
                   const t = typeConfig[ann.type]
-                  const channels = [ann.sendInApp ? 'In-App' : null, ann.sendEmail ? 'Email' : null].filter(Boolean).join(', ')
+                  const channels = [ann.sendEmail ? 'Email' : null, ann.sendWhatsApp ? 'WhatsApp' : null, ann.sendTelegram ? 'Telegram' : null].filter(Boolean).join(', ')
                   return (
                     <tr key={ann.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <td className="px-4 py-3">
@@ -151,7 +201,7 @@ export default function AnnouncementsPage() {
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${t.bg}`}>{t.text}</span>
                       </td>
-                      <td className="px-4 py-3 text-[11px] text-gray-600 capitalize">{ann.target}</td>
+                      <td className="px-4 py-3 text-[11px] text-gray-600 capitalize">{ann.targetAudience?.join(', ') || ann.target}</td>
                       <td className="px-4 py-3 text-[11px] text-gray-600">{channels}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${s.bg}`}>{s.text}</span>
@@ -227,9 +277,9 @@ export default function AnnouncementsPage() {
                 <h4 className="text-[16px] font-bold text-gray-900">{previewAnn.title}</h4>
                 <p className="text-[13px] text-gray-600 whitespace-pre-wrap">{previewAnn.message}</p>
                 <div className="text-[11px] text-gray-400 space-y-1 pt-2 border-t border-gray-100">
-                  <p>Target: <span className="text-gray-600 capitalize">{previewAnn.target}</span></p>
+                  <p>Target: <span className="text-gray-600 capitalize">{previewAnn.targetAudience?.join(', ') || previewAnn.target}</span></p>
                   <p>Channels: <span className="text-gray-600">
-                    {[previewAnn.sendInApp ? 'In-App' : null, previewAnn.sendEmail ? 'Email' : null].filter(Boolean).join(', ')}
+                    {[previewAnn.sendEmail ? 'Email' : null, previewAnn.sendWhatsApp ? 'WhatsApp' : null, previewAnn.sendTelegram ? 'Telegram' : null].filter(Boolean).join(', ')}
                   </span></p>
                   <p>Created: <span className="text-gray-600">{previewAnn.createdAt}</span></p>
                   {previewAnn.sentAt && <p>Sent: <span className="text-gray-600">{previewAnn.sentAt}</span></p>}
@@ -243,6 +293,26 @@ export default function AnnouncementsPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* New Announcement Modal */}
+        <NewAnnouncementModal
+          open={showNewModal}
+          onClose={() => setShowNewModal(false)}
+          onSend={handleNewAnnouncement}
+        />
+
+        {/* Delivery Confirmation Popup */}
+        {lastSentData && (
+          <DeliveryConfirmationPopup
+            open={showDeliveryConfirm}
+            onClose={() => { setShowDeliveryConfirm(false); setLastSentData(null) }}
+            title={lastSentData.title}
+            targetAudience={lastSentData.targetAudience}
+            channels={lastSentData.channels}
+            recipientCount={lastSentData.recipientCount}
+            sentAt={lastSentData.sentAt}
+          />
         )}
       </div>
     </PageTransition>

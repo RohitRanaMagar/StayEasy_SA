@@ -326,11 +326,14 @@ export default function ApiKeysPage() {
               </button>
             ))}
           </div>
-          <div className="relative">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-300" />
+          <div className="relative flex items-center">
+            <Search size={14} className="absolute left-3 text-gray-400" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search by name or key..."
-              className="pl-7 pr-2 py-1 text-[10px] border border-gray-200 rounded-lg outline-none focus:border-purple-300 w-48" />
+              className="pl-9 pr-10 py-2.5 text-[13px] bg-white border-2 border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#2E86AB]/20 focus:border-[#2E86AB] shadow-md w-48" />
+            <button className="absolute right-2 p-1.5 bg-[#2E86AB] text-white rounded-lg hover:bg-[#1a6b8a] transition-colors">
+              <Search size={14} />
+            </button>
           </div>
         </div>
 

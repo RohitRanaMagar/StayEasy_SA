@@ -145,7 +145,7 @@ export default function Step6BrandingVisuals({ data, onChange, propertyName = 'Y
             </div>
             <div className="preview-phone-content">
               <div className="preview-property-image" style={{ background: `linear-gradient(135deg, ${data.brandColor}, ${data.brandColor}dd)` }}>
-                <div className="preview-property-badge">STAYEASY</div>
+                <div className="preview-property-badge">ServeIQ</div>
               </div>
               <div className="preview-property-details">
                 <h4 className="preview-property-title">Testing Accommodations</h4>

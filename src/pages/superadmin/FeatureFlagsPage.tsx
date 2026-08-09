@@ -130,14 +130,17 @@ function FeatureFlagsTable({ flags, onToggle }: {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b border-gray-100">
         <h3 className="text-sm font-semibold text-gray-900">Global Feature Flags</h3>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-initial">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
+          <div className="relative flex items-center flex-1 sm:flex-initial">
+            <Search size={14} className="absolute left-3 text-gray-400" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search flags..."
-              className="pl-8 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-lg outline-none focus:border-blue-300 w-full sm:w-44"
+              className="pl-9 pr-10 py-2.5 text-[13px] bg-white border-2 border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#2E86AB]/20 focus:border-[#2E86AB] shadow-md w-full sm:w-44"
             />
+            <button className="absolute right-2 p-1.5 bg-[#2E86AB] text-white rounded-lg hover:bg-[#1a6b8a] transition-colors">
+              <Search size={14} />
+            </button>
           </div>
           <select
             value={scopeFilter}
@@ -707,7 +710,7 @@ export default function FeatureFlagsPage() {
                 <h3 className="text-sm font-semibold text-gray-900">Branding & White Label Configuration</h3>
                 <p className="text-[11px] text-gray-500 mt-1">
                   Manage custom domains, brand colors, logo uploads, and white-label settings for your tenants.
-                  White-label removes all StayEasy branding, giving tenants a fully customized experience.
+                  White-label removes all ServeIQ branding, giving tenants a fully customized experience.
                 </p>
               </div>
             </div>
