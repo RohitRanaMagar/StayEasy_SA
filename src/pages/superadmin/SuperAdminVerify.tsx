@@ -36,7 +36,6 @@ export default function SuperAdminVerify() {
   const [currentStep, setCurrentStep] = useState(1)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [configSubStep, setConfigSubStep] = useState<'a' | 'b' | 'c'>('a')
-  const [isEditing, setIsEditing] = useState(false)
 
   const [newEmail, setNewEmail] = useState('')
   const [codeSent, setCodeSent] = useState(false)
@@ -145,7 +144,6 @@ export default function SuperAdminVerify() {
     setPlatformConfig(config)
     completeStep(2)
     setProfileComplete(true)
-    setIsEditing(false)
     showToast('success', 'Platform configured!')
     navigate('/superadmin/profile-setup')
   }
@@ -165,7 +163,7 @@ export default function SuperAdminVerify() {
     reader.readAsDataURL(file)
   }
 
-  if (isProfileComplete && !isEditing) {
+  if (isProfileComplete) {
     return (
       <PageTransition>
         <div className="space-y-6">
@@ -193,7 +191,7 @@ export default function SuperAdminVerify() {
                 <p className="text-sm text-white/70 mt-1">{profile.email}</p>
 
                 <div className="flex items-center gap-3 mt-4">
-                  <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 bg-white text-[#2E86AB] rounded-lg text-sm font-medium hover:bg-white/90 transition-colors">
+                  <button onClick={() => navigate('/superadmin/profile-setup')} className="flex items-center gap-2 px-4 py-2 bg-white text-[#2E86AB] rounded-lg text-sm font-medium hover:bg-white/90 transition-colors">
                     <Edit size={14} /> Edit Profile
                   </button>
                   <button onClick={() => navigate('/superadmin')} className="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg text-sm font-medium hover:bg-white/30 transition-colors">
@@ -225,7 +223,7 @@ export default function SuperAdminVerify() {
             <div className="flex-[3] bg-white rounded-xl border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-gray-900">Identity Configuration</h3>
-                <button onClick={() => setIsEditing(true)} className="text-[11px] font-medium text-[#2E86AB] hover:text-[#1a6b8a] transition-colors">Edit Profile</button>
+                <button onClick={() => navigate('/superadmin/profile-setup')} className="text-[11px] font-medium text-[#2E86AB] hover:text-[#1a6b8a] transition-colors">Edit Profile</button>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -303,7 +301,7 @@ export default function SuperAdminVerify() {
                       <p className="text-[10px] text-gray-500">Last changed 30 days ago</p>
                     </div>
                   </div>
-                  <button onClick={() => setIsEditing(true)} className="text-[10px] font-medium text-[#2E86AB] hover:text-[#1a6b8a]">Change</button>
+                  <button onClick={() => navigate('/superadmin/profile-setup')} className="text-[10px] font-medium text-[#2E86AB] hover:text-[#1a6b8a]">Change</button>
                 </div>
               </div>
             </div>
