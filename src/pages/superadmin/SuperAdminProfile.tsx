@@ -39,6 +39,7 @@ export default function SuperAdminProfile() {
   const [isEditing, setIsEditing] = useState(false)
 
   const [newEmail, setNewEmail] = useState('')
+  const [codeSent, setCodeSent] = useState(false)
 
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [emailVerified, setEmailVerified] = useState(false)
@@ -103,6 +104,9 @@ export default function SuperAdminProfile() {
     if (value && index < 5) {
       const next = document.querySelector(`input[name="otp-${index + 1}"]`) as HTMLInputElement
       next?.focus()
+    } else if (!value && index > 0) {
+      const prev = document.querySelector(`input[name="otp-${index - 1}"]`) as HTMLInputElement
+      prev?.focus()
     }
   }
 
@@ -427,8 +431,8 @@ export default function SuperAdminProfile() {
                         className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors"
                         placeholder={profile.email}
                       />
-                      <button onClick={handleChangeEmail} className="px-4 py-2 bg-[#2E86AB] text-white rounded-lg text-sm font-medium hover:bg-[#24708f] transition-colors">
-                        Update
+                      <button onClick={() => { handleChangeEmail(); handleSendOtp(); setCodeSent(true) }} className="px-4 py-2 bg-[#2E86AB] text-white rounded-lg text-sm font-medium hover:bg-[#24708f] transition-colors">
+                        Request Code
                       </button>
                     </div>
                   </div>
@@ -441,7 +445,7 @@ export default function SuperAdminProfile() {
                     <p className="text-xs text-gray-400">Enter the 6-digit code sent to {newEmail || profile.email}</p>
                   </div>
 
-                  {!emailVerified && (
+                  {codeSent && !emailVerified && (
                     <div className="space-y-3">
                       <div className="flex gap-2 items-center">
                         {otp.map((digit, index) => (
@@ -451,7 +455,7 @@ export default function SuperAdminProfile() {
                           onClick={handleSendOtp}
                           className="ml-2 px-4 h-10 flex items-center justify-center rounded-lg text-xs font-semibold text-[#2E86AB] border border-[#2E86AB]/30 bg-[#2E86AB]/10 hover:bg-[#2E86AB]/20 transition-colors whitespace-nowrap"
                         >
-                          Request Code
+                          Resend Code
                         </button>
                       </div>
                       {otpError && <p className="text-xs text-red-500 flex items-center gap-1"><AlertTriangle size={12} /> {otpError}</p>}
