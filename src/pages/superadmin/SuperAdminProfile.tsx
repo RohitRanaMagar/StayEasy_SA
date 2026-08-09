@@ -408,6 +408,7 @@ export default function SuperAdminProfile() {
                 background: 'linear-gradient(135deg, #0B1120, #1A3C5E, #2E86AB)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                fontFamily: "'Sora', sans-serif",
               }}
             >
               Setup Your Profile

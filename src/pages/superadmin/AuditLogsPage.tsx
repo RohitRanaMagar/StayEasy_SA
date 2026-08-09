@@ -301,14 +301,14 @@ export default function AuditLogsPage() {
           <table className="w-full text-[12px]">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
-                <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                <th className="text-left py-2.5 px-4 text-gray-400 font-medium">Timestamp</th>
+                <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Admin</th>
+                <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Action</th>
+                <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Target</th>
+                <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Category</th>
+                <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Severity</th>
+                <th className="text-left py-2.5 px-3 text-gray-400 font-medium">IP Address</th>
+                <th className="text-right py-2.5 px-4 text-gray-400 font-medium">Details</th>
               </tr>
             </thead>
             <tbody>

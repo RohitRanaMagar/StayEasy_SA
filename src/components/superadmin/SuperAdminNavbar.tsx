@@ -54,7 +54,7 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
           <Menu size={20} />
         </button>
         <div className="min-w-0">
-          <h1 className="text-lg font-bold text-gray-900 truncate">{title}</h1>
+          <h1 className="text-lg font-bold text-gray-900 truncate" style={{ fontFamily: "'Sora', sans-serif" }}>{title}</h1>
           {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>}
         </div>
       </div>

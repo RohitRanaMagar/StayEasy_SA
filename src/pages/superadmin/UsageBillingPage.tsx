@@ -76,7 +76,7 @@ function StatCard({ icon: Icon, label, value, sub, color = '#2E86AB', trend }: {
           <Icon size={16} style={{ color }} />
         </div>
       </div>
-      <div className="text-xl font-bold text-gray-900">{value}</div>
+      <div className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>{value}</div>
       {sub && <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>}
       {trend && (
         <div className={`flex items-center gap-1 mt-2 text-[11px] font-medium ${trend.up ? 'text-emerald-600' : 'text-red-500'}`}>

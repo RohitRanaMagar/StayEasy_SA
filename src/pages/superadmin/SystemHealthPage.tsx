@@ -147,7 +147,7 @@ function MetricCard({ icon: Icon, label, value, sub, color = '#2E86AB', trend }:
           <Icon size={16} style={{ color }} />
         </div>
       </div>
-      <div className="text-lg font-bold text-gray-900">{value}</div>
+      <div className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>{value}</div>
       {sub && <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>}
       {trend && (
         <div className={`flex items-center gap-1 mt-2 text-[11px] font-medium ${trend.up ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -486,7 +486,7 @@ export default function SystemHealthPage() {
       </div>
 
       {/* ── Two column: Services + Dependencies ────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Services Status */}
         <div className="xl:col-span-2">
           <div className="bg-white rounded-xl border border-gray-100 p-4">

@@ -1,65 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 @import 'tw-animate-css';
 @import './styles/portal.css';
 
-@theme {
-  --color-brand: #2E86AB;
-  --color-brand-hover: #1A6B8A;
-  --color-brand-light: rgba(46,134,171,0.1);
-  --color-surface-page: #F1F5F9;
-  --color-surface-card: #FFFFFF;
-  --color-surface-muted: #F8FAFC;
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --radius-card: 12px;
-}
-
 :root {
-  /* Brand */
-  --color-primary: #2E86AB;
-  --color-primary-hover: #1A6B8A;
-  --color-primary-light: rgba(46,134,171,0.1);
-
-  /* Semantic */
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
-
-  /* Surfaces */
-  --color-bg-page: #F1F5F9;
-  --color-bg-card: #FFFFFF;
-  --color-bg-muted: #F8FAFC;
-
-  /* Borders */
-  --color-border-light: #E2E8F0;
-  --color-border-medium: #CBD5E1;
-
-  /* Text */
-  --color-text-primary: #0F172A;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94A3B8;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
-
-  /* Typography */
-  --font-family: 'Inter', system-ui, sans-serif;
-
-  /* Spacing */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-}
-
-body {
-  font-family: var(--font-family);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --primary: #2E86AB;
+  --primary-foreground: #ffffff;
+  --accent: #f0f9ff;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --destructive: #dc2626;
+  --destructive-bg: #fee2e2;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --ring: #2E86AB;
+  --radius: 0.5rem;
 }
 
 .custom-scroll::-webkit-scrollbar {

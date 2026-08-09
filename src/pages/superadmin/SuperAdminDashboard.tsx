@@ -49,11 +49,11 @@ function StatCard({ icon: Icon, label, value, change, changeType, color, sparkDa
   change: string; changeType: 'up' | 'down'; color: string; sparkData?: number[]
 }) {
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all">
+    <div className="bg-white rounded-lg p-3 border border-gray-100 hover:shadow-sm hover:border-gray-200 transition-all">
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider truncate">{label}</div>
-          <div className="text-lg font-bold text-gray-900 mt-0.5">{value}</div>
+          <div className="text-lg font-bold text-gray-900 mt-0.5" style={{ fontFamily: "'Sora', sans-serif" }}>{value}</div>
         </div>
         <div className="flex items-center gap-2">
           {sparkData && <Sparkline data={sparkData} color={color} />}
@@ -72,7 +72,7 @@ function StatCard({ icon: Icon, label, value, change, changeType, color, sparkDa
 
 function EmptyCard({ icon: Icon, message }: { icon: typeof Flag; message: string }) {
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100">
+    <div className="bg-white rounded-lg p-3 border border-gray-100">
       <div className="h-[80px] flex flex-col items-center justify-center gap-2 text-gray-300">
         <Icon size={16} />
         <span className="text-[11px]">{message}</span>
@@ -148,7 +148,7 @@ const MiniRevenueChart = memo(() => {
   }
 
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100">
+    <div className="bg-white rounded-lg p-3 border border-gray-100">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-semibold text-gray-900">Platform Revenue (MRR)</h3>
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
@@ -288,19 +288,19 @@ function TenantDrawer({ tenant, open, onClose }: { tenant: SuperAdminTenant | nu
 
           {/* Key info */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400">Properties</div>
               <div className="text-base font-bold text-gray-900">{tenant.propertiesCount}</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400">Email</div>
               <div className="text-xs font-medium text-gray-700 truncate">{tenant.email}</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400">Subscribed</div>
               <div className="text-xs font-medium text-gray-700">{tenant.subscriptionDate}</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400">Avg Rating</div>
               <div className="text-base font-bold text-gray-900">4.2 ⭐</div>
             </div>
@@ -383,27 +383,27 @@ function AuditLogModal({ log, open, onClose }: { log: SuperAdminAuditLog | null;
         <div className="p-5 space-y-4">
           {/* Basic info */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400 mb-0.5">Event ID</div>
               <div className="text-xs font-mono font-medium text-gray-700">{log.id}</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400 mb-0.5">Timestamp</div>
               <div className="text-xs font-medium text-gray-700">{log.timestamp}</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400 mb-0.5">Admin</div>
               <div className="text-xs font-medium text-gray-700">{log.admin}</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400 mb-0.5">Target</div>
               <div className="text-xs font-medium text-gray-700">{log.target}</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400 mb-0.5">Category</div>
               <div className="text-xs font-medium text-gray-700 capitalize">{log.category}</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-[10px] text-gray-400 mb-0.5">Severity</div>
               <div>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${severityColors[log.severity] || 'bg-gray-100 text-gray-600'}`}>{log.severity}</span>
@@ -412,7 +412,7 @@ function AuditLogModal({ log, open, onClose }: { log: SuperAdminAuditLog | null;
           </div>
 
           {/* Action badge + Details */}
-          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
             <div className="flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${actionColors[log.action] || 'bg-gray-100 text-gray-600'}`}>{log.action}</span>
             </div>
@@ -423,7 +423,7 @@ function AuditLogModal({ log, open, onClose }: { log: SuperAdminAuditLog | null;
           {log.metadata && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-gray-900">Request Metadata</h4>
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+              <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                 {log.metadata.requestMethod && (
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="text-gray-400">Method</span>
@@ -490,7 +490,7 @@ function AuditLogModal({ log, open, onClose }: { log: SuperAdminAuditLog | null;
               >
                 <Copy size={12} />
               </button>
-              <pre className="text-[9px] font-mono bg-gray-900 text-gray-100 rounded-xl p-4 overflow-x-auto max-h-[200px]">
+              <pre className="text-[9px] font-mono bg-gray-900 text-gray-100 rounded-lg p-3 overflow-x-auto max-h-[200px]">
                 {JSON.stringify(log, null, 2)}
               </pre>
             </div>
@@ -566,7 +566,7 @@ function TenantTable({ onImpersonate }: { onImpersonate?: (name: string) => void
   }
 
   const SortHeader = ({ field, label, className = '' }: { field: SortField; label: string; className?: string }) => (
-    <th className={`text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 transition-colors select-none ${className}`}
+    <th className={`text-left py-2 px-3 text-gray-400 font-medium cursor-pointer hover:text-gray-600 transition-colors select-none ${className}`}
       onClick={() => toggleSort(field)}>
       <div className="flex items-center gap-1">
         {label}
@@ -654,7 +654,7 @@ function TenantTable({ onImpersonate }: { onImpersonate?: (name: string) => void
         <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
           <table className="w-full text-[11px]">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-gray-100 bg-gray-50/50">
+              <tr className="border-b border-gray-100 bg-gray-50/80 backdrop-blur-sm">
                 <th className="w-8 px-3 py-2">
                   <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500/30" />
@@ -664,7 +664,7 @@ function TenantTable({ onImpersonate }: { onImpersonate?: (name: string) => void
                 <SortHeader field="status" label="Status" />
                 <SortHeader field="propertiesCount" label="Properties" />
                 <SortHeader field="subscriptionDate" label="Subscribed" />
-                <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="text-right py-2 px-3 text-gray-400 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -820,7 +820,7 @@ function KeyFeatureFlags() {
   const enabledCount = featureFlags.filter(f => f.status).length
 
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100">
+    <div className="bg-white rounded-lg p-3 border border-gray-100">
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2">
           <Flag size={13} className="text-[#2E86AB]" />
@@ -909,7 +909,7 @@ function SystemHealthSection() {
   }
 
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100">
+    <div className="bg-white rounded-lg p-3 border border-gray-100">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-semibold text-gray-900">System Health</h3>
         <button onClick={() => navigate('/superadmin/logs')} className="flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:text-blue-700 transition-colors">
@@ -979,7 +979,7 @@ function AuditLogSection() {
 
   return (
     <>
-<div className="bg-white rounded-xl p-4 border border-gray-100">
+      <div className="bg-white rounded-lg p-3 border border-gray-100">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-semibold text-gray-900">Recent Audit Log</h3>
           <button onClick={() => navigate('/superadmin/audit-logs')} className="text-[10px] font-medium text-blue-600 hover:text-blue-700 transition-colors">View all →</button>
