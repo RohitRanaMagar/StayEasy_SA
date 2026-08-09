@@ -59,14 +59,14 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
         </div>
       </div>
 
-      {/* Center: Date */}
-      <div className="hidden md:flex items-center gap-2 text-sm text-gray-600">
-        <Calendar size={16} className="text-gray-400" />
-        <span>{dayStr}, {dateStr} • {timeStr}</span>
-      </div>
-
       {/* Right: Actions */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Date & Time */}
+        <div className="hidden md:flex items-center gap-2 text-sm text-gray-600">
+          <Calendar size={16} className="text-gray-400" />
+          <span>{dayStr}, {dateStr} • {timeStr}</span>
+        </div>
+
         {/* Refresh Button - hidden on profile pages */}
         {!isProfilePage && (
           <button
