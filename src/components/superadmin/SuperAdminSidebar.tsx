@@ -7,6 +7,7 @@ import {
   ChevronDown, List, UserPlus, Bell, Mail,
 } from 'lucide-react'
 import { sidebarSections } from '../../data/superAdminNav'
+import { superAdminLogout } from '../../lib/auth-utils'
 import logo1 from '/logo1.png'
 
 const iconMap: Record<string, typeof LayoutDashboard> = {
@@ -195,12 +196,7 @@ export default function SuperAdminSidebar({ collapsed, onToggle, mobileOpen, onM
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    localStorage.removeItem('superAdminToken')
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('tempToken')
-    localStorage.removeItem('userType')
-    localStorage.removeItem('isProfileComplete')
+    superAdminLogout()
     navigate('/superadmin/login')
   }
 

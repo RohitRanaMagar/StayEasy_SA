@@ -2,6 +2,7 @@ import { Bell, ChevronDown, LogOut, Settings, User, Menu, UserX, CreditCard, Use
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSuperAdminStore } from './superAdminStore'
+import { superAdminLogout } from '../../lib/auth-utils'
 
 interface SuperAdminNavbarProps {
   title: string
@@ -19,12 +20,7 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
   const isProfilePage = location.pathname.startsWith('/superadmin/profile')
 
   const handleLogout = () => {
-    localStorage.removeItem('superAdminToken')
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('tempToken')
-    localStorage.removeItem('userType')
-    localStorage.removeItem('isProfileComplete')
+    superAdminLogout()
     navigate('/superadmin/login')
   }
 

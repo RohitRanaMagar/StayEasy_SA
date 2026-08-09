@@ -3,6 +3,7 @@ import { Outlet, useNavigate, NavLink } from 'react-router-dom'
 import { User, Settings, Bell, Activity, LogOut, ChevronDown, UserX, CreditCard, Users, Server } from 'lucide-react'
 import { ToastProvider } from './Toast'
 import { useSuperAdminStore } from './superAdminStore'
+import { superAdminLogout } from '../../lib/auth-utils'
 import logo1 from '/logo1.png'
 
 const sidebarItems = [
@@ -21,12 +22,7 @@ export default function SuperAdminProfileLayout() {
   const menuRef = useRef<HTMLDivElement>(null)
 
   const handleLogout = () => {
-    localStorage.removeItem('superAdminToken')
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('tempToken')
-    localStorage.removeItem('userType')
-    localStorage.removeItem('isProfileComplete')
+    superAdminLogout()
     navigate('/superadmin/login')
   }
 
