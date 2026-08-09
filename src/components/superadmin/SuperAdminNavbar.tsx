@@ -1,8 +1,9 @@
-import { Bell, ChevronDown, LogOut, Settings, User, Menu, UserX, CreditCard, Users, Server, RotateCw, Calendar } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Settings, User, Menu, RotateCw, Calendar } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSuperAdminStore } from './superAdminStore'
 import { superAdminLogout } from '../../lib/auth-utils'
+import NotificationDropdown from './NotificationDropdown'
 
 interface SuperAdminNavbarProps {
   title: string
@@ -84,65 +85,7 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
           </button>
 
-          {/* Hover Dropdown */}
-          <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-900">Notifications</p>
-                <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-red-500 text-white rounded-full">4</span>
-              </div>
-            </div>
-            <div className="max-h-64 overflow-y-auto">
-              <div className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
-                  <UserX size={14} className="text-red-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-medium text-gray-800">Tenant Suspended</p>
-                  <p className="text-[10px] text-gray-400 truncate">Hotel Everest suspended</p>
-                </div>
-                <span className="text-[9px] text-gray-400 shrink-0 mt-0.5">15m</span>
-              </div>
-              <div className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center shrink-0 mt-0.5">
-                  <CreditCard size={14} className="text-amber-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-medium text-gray-800">Payment Failed</p>
-                  <p className="text-[10px] text-gray-400 truncate">$299 from Mountain View Resort</p>
-                </div>
-                <span className="text-[9px] text-gray-400 shrink-0 mt-0.5">1h</span>
-              </div>
-              <div className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center shrink-0 mt-0.5">
-                  <Users size={14} className="text-green-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-medium text-gray-800">New Tenant Signup</p>
-                  <p className="text-[10px] text-gray-400 truncate">Lakeside Inn joined</p>
-                </div>
-                <span className="text-[9px] text-gray-400 shrink-0 mt-0.5">2h</span>
-              </div>
-              <div className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
-                  <Server size={14} className="text-red-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-medium text-gray-800">System Incident</p>
-                  <p className="text-[10px] text-gray-400 truncate">API Gateway errors</p>
-                </div>
-                <span className="text-[9px] text-gray-400 shrink-0 mt-0.5">3h</span>
-              </div>
-            </div>
-            <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/50">
-              <button
-                onClick={() => navigate('/superadmin/profile/notifications')}
-                className="w-full text-center text-[11px] font-medium text-[#2E86AB] hover:text-[#1a6b8a] transition-colors"
-              >
-                View all notifications →
-              </button>
-            </div>
-          </div>
+          <NotificationDropdown />
         </div>
 
         {/* SA Badge */}
