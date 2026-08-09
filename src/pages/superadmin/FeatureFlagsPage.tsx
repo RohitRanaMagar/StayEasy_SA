@@ -167,14 +167,14 @@ function FeatureFlagsTable({ flags, onToggle }: {
       <div className="overflow-x-auto">
         <table className="w-full text-[12px]">
           <thead>
-            <tr className="border-b border-gray-50 bg-gray-50/50">
-              <th className="text-left py-2.5 px-4 text-gray-400 font-medium">Feature</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Category</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Scope</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Status</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Rollout</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Updated</th>
-              <th className="text-right py-2.5 px-4 text-gray-400 font-medium">Actions</th>
+            <tr className="border-b border-gray-100 bg-gray-50/50">
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Feature</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Scope</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Rollout</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Updated</th>
+              <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody>

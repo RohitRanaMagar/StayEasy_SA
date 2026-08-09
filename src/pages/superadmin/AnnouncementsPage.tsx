@@ -176,13 +176,13 @@ export default function AnnouncementsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Title</th>
-                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Type</th>
-                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Target</th>
-                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Channel</th>
-                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Status</th>
-                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Created</th>
-                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Actions</th>
+                  <th className="text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Title</th>
+                  <th className="text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Type</th>
+                  <th className="text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Target</th>
+                  <th className="text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Channel</th>
+                  <th className="text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Status</th>
+                  <th className="text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Created</th>
+                  <th className="text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>

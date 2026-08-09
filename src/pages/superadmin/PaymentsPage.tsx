@@ -205,16 +205,16 @@ function TransactionsTable({ transactions }: { transactions: PaymentTransaction[
       <div className="overflow-x-auto">
         <table className="w-full text-[12px]">
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Transaction</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Tenant</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Gateway</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Amount</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Fee</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Net</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Status</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Date</th>
-              <th className="text-right py-2.5 px-3 text-gray-400 font-medium">Actions</th>
+            <tr className="border-b border-gray-100 bg-gray-50/50">
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Gateway</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Fee</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Net</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+              <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody>
