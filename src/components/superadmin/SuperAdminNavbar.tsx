@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, LogOut, Settings, User, Menu, UserX, CreditCard, Users, Server, RotateCw } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Settings, User, Menu, UserX, CreditCard, Users, Server, RotateCw, Calendar } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSuperAdminStore } from './superAdminStore'
@@ -37,7 +37,8 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
   }, [])
 
   const now = new Date()
-  const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  const dayStr = now.toLocaleDateString('en-US', { weekday: 'long' })
+  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
 
   return (
@@ -58,6 +59,12 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
         </div>
       </div>
 
+      {/* Center: Date */}
+      <div className="hidden md:flex items-center gap-2 text-sm text-gray-600">
+        <Calendar size={16} className="text-gray-400" />
+        <span>{dayStr}, {dateStr} • {timeStr}</span>
+      </div>
+
       {/* Right: Actions */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Refresh Button - hidden on profile pages */}
@@ -70,11 +77,6 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
             <RotateCw size={16} />
           </button>
         )}
-
-        {/* Date */}
-        <span className="text-xs text-gray-400 hidden lg:block">
-          {dateStr}  {timeStr}
-        </span>
 
         {/* Notifications */}
         <div className="relative group">
@@ -147,15 +149,17 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
           </div>
         </div>
 
+        {/* SA Badge */}
+        <div className="hidden sm:flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #1A3C5E, #2E86AB)' }}>
+          SA
+        </div>
+
         {/* Profile */}
         <div ref={menuRef} className="relative">
           <button
             onClick={() => setMenuOpen(v => !v)}
             className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #1A3C5E, #2E86AB)' }}>
-              {profile.fullName.charAt(0) || 'S'}
-            </div>
             <span className="text-sm font-semibold text-gray-700 hidden sm:block">{profile.fullName || 'SuperAdmin'}</span>
             <ChevronDown size={14} className={`text-gray-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
           </button>

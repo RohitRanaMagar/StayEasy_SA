@@ -17,6 +17,7 @@ export interface SuperAdminTenant {
   city?: string
   country?: string
   integrations?: string[]
+  onboardingProgress: number
 }
 
 export interface SuperAdminFeatureFlag {
@@ -686,6 +687,23 @@ export interface TenantExtended {
   }
   staffCount: number
   integrations: string[]
+  onboardingProgress: number
+}
+
+export interface OnboardingActivity {
+  id: string
+  tenantId: string
+  tenantName: string
+  action: string
+  time: string
+  icon: string
+}
+
+export interface OnboardingStep {
+  key: string
+  label: string
+  description: string
+  icon: string
 }
 
 export interface SuperAdminProfile {

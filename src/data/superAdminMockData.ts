@@ -57,6 +57,7 @@ import type {
   RateLimitPolicy,
   ApiUsageMetric,
   SettingsChangeLog,
+  OnboardingActivity,
 } from '../types/superadmin'
 
 // ═══════════════════════════════════════════════════════════════
@@ -77,6 +78,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'English', createdAt: 'Dec 12, 2024', lastActiveAt: 'Aug 5, 2026',
     featureFlags: { customDomain: true, whiteLabel: true, channelManager: true, advancedAnalytics: true, restaurantModule: true, multiLanguage: true },
     integrations: ['Stripe', 'Booking.com', 'GoogleAnalytics', 'Slack'],
+    onboardingProgress: 5,
   },
   {
     id: 'tnt_002', name: 'Lakeside Resort Pokhara', email: 'info@lakesideresort.com', phone: '+977-61-555123',
@@ -91,6 +93,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'English', createdAt: 'Jan 5, 2025', lastActiveAt: 'Aug 4, 2026',
     featureFlags: { customDomain: false, whiteLabel: false, channelManager: true, advancedAnalytics: true, restaurantModule: false, multiLanguage: true },
     integrations: ['Stripe', 'Razorpay'],
+    onboardingProgress: 4,
   },
   {
     id: 'tnt_003', name: 'Budget Stay Chitwan', email: 'hello@budgetstay.com', phone: '+977-56-444888',
@@ -105,6 +108,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'Nepali', createdAt: 'Feb 20, 2025', lastActiveAt: 'Jun 28, 2026',
     featureFlags: { customDomain: false, whiteLabel: false, channelManager: false, advancedAnalytics: false, restaurantModule: false, multiLanguage: false },
     integrations: ['Razorpay'],
+    onboardingProgress: 1,
   },
   {
     id: 'tnt_004', name: 'Heritage Inn Bhaktapur', email: 'frontdesk@heritageinn.com', phone: '+977-1-6611234',
@@ -119,6 +123,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'English', createdAt: 'Nov 15, 2024', lastActiveAt: 'Aug 5, 2026',
     featureFlags: { customDomain: true, whiteLabel: false, channelManager: true, advancedAnalytics: false, restaurantModule: true, multiLanguage: false },
     integrations: ['Stripe', 'Booking.com'],
+    onboardingProgress: 4,
   },
   {
     id: 'tnt_005', name: 'Sunrise Beach Resort', email: 'reservations@sunrisebeach.com', phone: '+977-61-777444',
@@ -133,6 +138,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'English', createdAt: 'Jul 28, 2026', lastActiveAt: 'Aug 5, 2026',
     featureFlags: { customDomain: false, whiteLabel: false, channelManager: true, advancedAnalytics: true, restaurantModule: false, multiLanguage: false },
     integrations: [],
+    onboardingProgress: 3,
   },
   {
     id: 'tnt_006', name: 'Himalaya View Hotel', email: 'bookings@himalayaview.com', phone: '+977-61-556677',
@@ -147,6 +153,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'English', createdAt: 'Apr 14, 2025', lastActiveAt: 'Aug 5, 2026',
     featureFlags: { customDomain: true, whiteLabel: true, channelManager: true, advancedAnalytics: true, restaurantModule: false, multiLanguage: true },
     integrations: ['Stripe', 'Booking.com', 'Slack'],
+    onboardingProgress: 6,
   },
   {
     id: 'tnt_007', name: 'Garden Retreat Lalitpur', email: 'stay@gardenretreat.com', phone: '+977-1-5522334',
@@ -161,6 +168,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'Nepali', createdAt: 'May 25, 2025', lastActiveAt: 'Aug 3, 2026',
     featureFlags: { customDomain: false, whiteLabel: false, channelManager: true, advancedAnalytics: false, restaurantModule: true, multiLanguage: true },
     integrations: ['Stripe', 'GoogleAnalytics'],
+    onboardingProgress: 5,
   },
   {
     id: 'tnt_008', name: 'Royal Palace Hotel', email: 'reservations@royalpalace.com', phone: '+977-1-4265152',
@@ -175,6 +183,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'English', createdAt: 'Aug 8, 2024', lastActiveAt: 'Aug 5, 2026',
     featureFlags: { customDomain: true, whiteLabel: true, channelManager: true, advancedAnalytics: true, restaurantModule: true, multiLanguage: true },
     integrations: ['Stripe', 'Razorpay', 'Booking.com', 'GoogleAnalytics', 'Slack', 'Twilio'],
+    onboardingProgress: 6,
   },
   {
     id: 'tnt_009', name: 'Mountain Trail Lodge', email: 'trail@mountaintrail.com', phone: '+977-26-450099',
@@ -189,6 +198,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'Nepali', createdAt: 'Sep 25, 2025', lastActiveAt: 'May 22, 2026',
     featureFlags: { customDomain: false, whiteLabel: false, channelManager: false, advancedAnalytics: false, restaurantModule: false, multiLanguage: false },
     integrations: ['Razorpay'],
+    onboardingProgress: 1,
   },
   {
     id: 'tnt_010', name: 'Annapurna Base Camp Inn', email: 'hello@abcinn.com', phone: '+977-61-431212',
@@ -203,6 +213,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'English', createdAt: 'Aug 2, 2026', lastActiveAt: 'Aug 5, 2026',
     featureFlags: { customDomain: false, whiteLabel: false, channelManager: true, advancedAnalytics: false, restaurantModule: false, multiLanguage: false },
     integrations: [],
+    onboardingProgress: 2,
   },
   {
     id: 'tnt_011', name: 'Skyline Boutique Hotel', email: 'stay@skylineboutique.com', phone: '+977-21-520110',
@@ -217,6 +228,7 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'English', createdAt: 'Dec 30, 2025', lastActiveAt: 'Aug 4, 2026',
     featureFlags: { customDomain: false, whiteLabel: false, channelManager: true, advancedAnalytics: true, restaurantModule: false, multiLanguage: false },
     integrations: ['Stripe'],
+    onboardingProgress: 5,
   },
   {
     id: 'tnt_012', name: 'Mustang Desert Camp', email: 'camp@mustangdesert.com', phone: '+977-69-460055',
@@ -231,6 +243,34 @@ export const mockTenantsExtended: TenantExtended[] = [
     timezone: 'Asia/Kathmandu', language: 'English', createdAt: 'Feb 15, 2025', lastActiveAt: 'Aug 5, 2026',
     featureFlags: { customDomain: true, whiteLabel: false, channelManager: true, advancedAnalytics: true, restaurantModule: true, multiLanguage: false },
     integrations: ['Stripe', 'Booking.com', 'GoogleAnalytics'],
+    onboardingProgress: 6,
+  },
+]
+
+export const mockOnboardingActivities: OnboardingActivity[] = [
+  {
+    id: 'act_001',
+    tenantId: 'tnt_002',
+    tenantName: 'Lakeside Resort Pokhara',
+    action: 'Rooms configured',
+    time: '2h ago',
+    icon: 'building',
+  },
+  {
+    id: 'act_002',
+    tenantId: 'tnt_005',
+    tenantName: 'Sunrise Beach Resort',
+    action: 'Property details updated',
+    time: '5h ago',
+    icon: 'building',
+  },
+  {
+    id: 'act_003',
+    tenantId: 'tnt_004',
+    tenantName: 'Heritage Inn Bhaktapur',
+    action: 'Payment gateway connected',
+    time: '1d ago',
+    icon: 'building',
   },
 ]
 
@@ -238,9 +278,11 @@ export const mockTenantsExtended: TenantExtended[] = [
 export const mockTenants: SuperAdminTenant[] = mockTenantsExtended.map(({
   id, name, plan, status, propertiesCount, subscriptionDate, email, phone,
   ownerName, ownerEmail, ownerPhone, monthlyRevenue, logo, city, country, integrations,
+  onboardingProgress,
 }) => ({
   id, name, plan, status, propertiesCount, subscriptionDate, email, phone,
   ownerName, ownerEmail, ownerPhone, monthlyRevenue, logo, city, country, integrations,
+  onboardingProgress,
 }))
 
 // ═══════════════════════════════════════════════════════════════
