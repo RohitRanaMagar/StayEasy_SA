@@ -82,7 +82,7 @@ export default function SuperAdminProfileLayout() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                 </button>
                 <div className="min-w-0">
-                  <h1 className="text-lg font-bold text-gray-900 truncate" style={{ fontFamily: "'Sora', sans-serif" }}>Profile</h1>
+                  <h1 className="text-lg font-bold text-gray-900 truncate">Profile</h1>
                   <p className="text-xs text-gray-400 mt-0.5 truncate">Manage your account and platform configuration</p>
                 </div>
               </div>
@@ -218,7 +218,7 @@ function SidebarNav({ onNavigate, onLogout }: { onNavigate?: () => void; onLogou
     <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col">
       <div className="flex items-center gap-3 px-3 mb-4 pb-4 border-b border-white/8">
         <img src={logo1} alt="ServeIQ" className="w-8 h-8 object-contain shrink-0" />
-        <span className="text-[14px] font-bold text-white tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
+        <span className="text-[14px] font-bold text-white tracking-tight">
           Serve<span style={{ color: '#57B8D9' }}>IQ</span>
         </span>
       </div>

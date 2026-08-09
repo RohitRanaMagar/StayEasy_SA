@@ -53,7 +53,7 @@ function StatCard({ icon: Icon, label, value, change, changeType, color, sparkDa
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider truncate">{label}</div>
-          <div className="text-lg font-bold text-gray-900 mt-0.5" style={{ fontFamily: "'Sora', sans-serif" }}>{value}</div>
+          <div className="text-lg font-bold text-gray-900 mt-0.5">{value}</div>
         </div>
         <div className="flex items-center gap-2">
           {sparkData && <Sparkline data={sparkData} color={color} />}

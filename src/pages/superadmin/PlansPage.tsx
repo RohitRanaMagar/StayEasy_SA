@@ -124,7 +124,7 @@ function PlanCard({ plan, onEdit, onArchive }: { plan: Plan; onEdit: (p: Plan) =
         {/* Price */}
         <div className="mb-4">
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>
+            <span className="text-2xl font-bold text-gray-900">
               {plan.monthlyPrice === 0 ? 'Free' : `$${plan.monthlyPrice}`}
             </span>
             {plan.monthlyPrice > 0 && <span className="text-[13px] text-gray-400">/month</span>}
