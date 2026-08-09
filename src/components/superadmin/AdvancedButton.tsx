@@ -178,7 +178,8 @@ export function ConfirmDialog({
         setSuccess(false)
         onClose()
       }, 800)
-    } catch {
+    } catch (error) {
+      console.error('ConfirmDialog onConfirm error:', error)
       setError(true)
       setLoading(false)
       setTimeout(() => setError(false), 2000)
@@ -369,7 +370,8 @@ export function ExportButton({ onExport, label = 'Export' }: {
       await new Promise(r => setTimeout(r, 600))
       setState('done')
       setTimeout(() => setState('idle'), 2000)
-    } catch {
+    } catch (error) {
+      console.error('ExportButton onExport error:', error)
       setState('idle')
     }
   }
