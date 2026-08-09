@@ -31,6 +31,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/superadmin/api-keys':      { title: 'API Keys', subtitle: 'Manage and monitor API keys, permissions, and usage' },
   '/superadmin/tickets':       { title: 'Support Tickets', subtitle: 'Manage escalated issues from tenant admins' },
   '/superadmin/announcements': { title: 'Announcements', subtitle: 'Send platform-wide announcements to tenants' },
+  '/superadmin/inbox':         { title: 'Inbox', subtitle: 'View and manage messages' },
 }
 
 export default function SuperAdminLayout() {
