@@ -4,7 +4,7 @@ import {
   Camera, CheckCircle,
   Shield, Lock, Eye, EyeOff,
   AlertTriangle, KeyRound, ArrowRight, ArrowLeft,
-  Settings, Edit, LogIn, Activity,
+  Edit, LogIn, Activity,
 } from 'lucide-react'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { useToast } from '../../components/superadmin/Toast'
@@ -50,16 +50,6 @@ export default function SuperAdminProfile() {
   const [passwordError, setPasswordError] = useState('')
 
   const [config, setConfig] = useState({ ...platformConfig })
-
-  const steps = [
-    { id: 1, label: 'Verification', icon: Shield },
-    { id: 2, label: 'Platform Config', icon: Settings },
-  ]
-
-  const isStepAccessible = (stepId: number) => {
-    if (stepId === 1) return true
-    return completedSteps.includes(stepId - 1)
-  }
 
   const completeStep = (stepId: number) => {
     if (!completedSteps.includes(stepId)) {
@@ -361,60 +351,6 @@ export default function SuperAdminProfile() {
             <p className="text-sm text-gray-400 mt-1">Verify your account and configure your platform</p>
           </div>
 
-          {currentStep === 2 && (
-            <div className="bg-white rounded-xl border border-gray-100 p-4">
-              <div className="flex items-center justify-between">
-                {steps.map((step, index) => (
-                  <div key={step.id} className="flex items-center flex-1 last:flex-none">
-                    <button
-                      onClick={() => isStepAccessible(step.id) && setCurrentStep(step.id)}
-                      disabled={!isStepAccessible(step.id)}
-                      className={`flex items-center gap-2 transition-all ${
-                        !isStepAccessible(step.id) ? 'cursor-not-allowed' : 'cursor-pointer'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                        completedSteps.includes(step.id)
-                          ? 'bg-emerald-500 text-white'
-                          : currentStep === step.id
-                          ? 'bg-[#2E86AB] text-white shadow-md'
-                          : 'bg-gray-100 text-gray-400'
-                      }`}>
-                        {completedSteps.includes(step.id) ? (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          step.id
-                        )}
-                      </div>
-                      <span className={`text-xs font-medium hidden sm:block ${
-                        currentStep === step.id ? 'text-[#2E86AB]' : 'text-gray-500'
-                      }`}>
-                        {step.label}
-                      </span>
-                    </button>
-                    {index < steps.length - 1 && (
-                      <div className={`flex-1 h-0.5 mx-3 transition-all ${
-                        completedSteps.includes(step.id) ? 'bg-emerald-400' : 'bg-gray-200'
-                      }`} />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className={configSubStep === 'a' ? 'text-[#2E86AB] font-semibold' : completedSteps.includes(2) ? 'text-emerald-500' : 'text-gray-400'}>1 Critical</span>
-                  <div className={`flex-1 h-0.5 ${configSubStep === 'b' || configSubStep === 'c' ? 'bg-[#2E86AB]' : 'bg-gray-200'}`} />
-                  <span className={configSubStep === 'b' ? 'text-[#2E86AB] font-semibold' : configSubStep === 'c' ? 'text-emerald-500' : 'text-gray-400'}>2 Defaults</span>
-                  <div className={`flex-1 h-0.5 ${configSubStep === 'c' ? 'bg-[#2E86AB]' : 'bg-gray-200'}`} />
-                  <span className={configSubStep === 'c' ? 'text-[#2E86AB] font-semibold' : 'text-gray-400'}>3 Optional</span>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="bg-white rounded-xl border border-gray-100 p-6">
 
             {currentStep === 1 && (
@@ -520,6 +456,13 @@ export default function SuperAdminProfile() {
 
             {currentStep === 2 && configSubStep === 'a' && (
               <div className="space-y-6">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-[#2E86AB] font-semibold">1 Critical</span>
+                  <div className="flex-1 h-0.5 bg-gray-200" />
+                  <span className="text-gray-400">2 Defaults</span>
+                  <div className="flex-1 h-0.5 bg-gray-200" />
+                  <span className="text-gray-400">3 Optional</span>
+                </div>
                 <h3 className="text-sm font-semibold text-gray-900">Critical Settings</h3>
                 <p className="text-xs text-gray-400">Platform basics and email configuration — required for the platform to work.</p>
 
@@ -594,6 +537,13 @@ export default function SuperAdminProfile() {
 
             {currentStep === 2 && configSubStep === 'b' && (
               <div className="space-y-6">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-emerald-500">1 Critical</span>
+                  <div className="flex-1 h-0.5 bg-[#2E86AB]" />
+                  <span className="text-[#2E86AB] font-semibold">2 Defaults</span>
+                  <div className="flex-1 h-0.5 bg-gray-200" />
+                  <span className="text-gray-400">3 Optional</span>
+                </div>
                 <h3 className="text-sm font-semibold text-gray-900">Important Defaults</h3>
                 <p className="text-xs text-gray-400">Sensible defaults — can be changed later in Settings.</p>
 
@@ -669,6 +619,13 @@ export default function SuperAdminProfile() {
 
             {currentStep === 2 && configSubStep === 'c' && (
               <div className="space-y-6">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-emerald-500">1 Critical</span>
+                  <div className="flex-1 h-0.5 bg-[#2E86AB]" />
+                  <span className="text-emerald-500">2 Defaults</span>
+                  <div className="flex-1 h-0.5 bg-[#2E86AB]" />
+                  <span className="text-[#2E86AB] font-semibold">3 Optional</span>
+                </div>
                 <h3 className="text-sm font-semibold text-gray-900">Optional Settings</h3>
                 <p className="text-xs text-gray-400">Configure as your platform grows — all have sensible defaults.</p>
 
