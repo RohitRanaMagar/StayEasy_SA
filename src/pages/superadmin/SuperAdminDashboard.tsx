@@ -5,12 +5,13 @@ import {
   Search, Ban, UserCog, ChevronLeft, ChevronRight,
   AlertTriangle, Clock, Server,
   Database, Zap, BarChart3, ArrowUpRight, ArrowDownRight,
-  Shield, AlertOctagon, Download, FileText,
+  Shield, Download, FileText,
   X, Info, ExternalLink, Columns, Copy, Flag, Globe, Palette,
 } from 'lucide-react'
 import type { SuperAdminTenant, SuperAdminAuditLog } from '../../types/superadmin'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition, FadeIn, StaggerList, StaggerItem } from '../../components/superadmin/Animations'
+import { ConfirmDialog } from '../../components/superadmin/AdvancedButton'
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -199,42 +200,6 @@ const MiniRevenueChart = memo(() => {
     </div>
   )
 })
-
-// ═══════════════════════════════════════════════════════════════
-// Confirmation Modal
-// ═══════════════════════════════════════════════════════════════
-
-function ConfirmModal({ open, title, message, confirmLabel, confirmColor, onConfirm, onCancel }: {
-  open: boolean; title: string; message: string; confirmLabel: string; confirmColor?: string;
-  onConfirm: () => void; onCancel: () => void
-}) {
-  if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onCancel}>
-      <div className="bg-white rounded-xl shadow-xl border border-gray-100 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-        <div className="p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-              <AlertOctagon size={18} className="text-red-500" />
-            </div>
-            <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-          </div>
-          <p className="text-xs text-gray-500 leading-relaxed">{message}</p>
-          <div className="flex items-center gap-2 mt-4 justify-end">
-            <button onClick={onCancel} className="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors active:scale-95">
-              Cancel
-            </button>
-            <button onClick={onConfirm}
-              className="px-4 py-2 text-xs font-semibold text-white rounded-lg transition-all active:scale-95"
-              style={{ background: confirmColor || '#EF4444' }}>
-              {confirmLabel}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ═══════════════════════════════════════════════════════════════
 // Impersonation Banner
@@ -755,23 +720,24 @@ function TenantTable({ onImpersonate }: { onImpersonate?: (name: string) => void
       </div>
 
       {/* Suspend Confirmation Modal */}
-      <ConfirmModal
+      <ConfirmDialog
         open={suspendTarget !== null}
+        onClose={() => setSuspendTarget(null)}
         title="Suspend Tenant"
         message={`Are you sure you want to suspend "${suspendTarget?.name}"? This will immediately deactivate their account, booking engine, and all associated services. All guests with active bookings will be notified.`}
         confirmLabel="Suspend Tenant"
-        confirmColor="#EF4444"
-        onConfirm={() => { if (suspendTarget) { suspendTenant(suspendTarget.id); } setSuspendTarget(null) }}
-        onCancel={() => setSuspendTarget(null)}
+        variant="danger"
+        onConfirm={() => { if (suspendTarget) { suspendTenant(suspendTarget.id); } }}
       />
 
       {/* Impersonation Confirmation Modal */}
-      <ConfirmModal
+      <ConfirmDialog
         open={impersonateTarget !== null}
+        onClose={() => setImpersonateTarget(null)}
         title="Impersonate Tenant"
         message={`You are about to impersonate "${impersonateTarget?.name}". You will gain full access to their admin account. All actions will be logged with your SuperAdmin credentials.`}
         confirmLabel="Start Impersonation"
-        confirmColor="#F59E0B"
+        variant="primary"
         onConfirm={() => {
           if (impersonateTarget) {
             addAuditLog({
@@ -781,9 +747,7 @@ function TenantTable({ onImpersonate }: { onImpersonate?: (name: string) => void
             })
             onImpersonate?.(impersonateTarget.name)
           }
-          setImpersonateTarget(null)
         }}
-        onCancel={() => setImpersonateTarget(null)}
       />
 
       {/* Tenant Drawer */}

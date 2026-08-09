@@ -7,6 +7,7 @@ import {
 import { formatNumber } from '../../lib/format'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition } from '../../components/superadmin/Animations'
+import { ConfirmDialog } from '../../components/superadmin/AdvancedButton'
 import type { ApiKeyEntry } from '../../types/superadmin'
 
 // ═══════════════════════════════════════════════════════════════
@@ -34,41 +35,6 @@ function maskKey(key: string): string {
 // ═══════════════════════════════════════════════════════════════
 // Create / Rotate / Revoke Modal
 // ═══════════════════════════════════════════════════════════════
-
-function ConfirmModal({
-  open, onClose, onConfirm,
-  title, message, icon: Icon, confirmLabel, confirmColor,
-}: {
-  open: boolean; onClose: () => void; onConfirm: () => void
-  title: string; message: string; icon: React.ElementType
-  confirmLabel: string; confirmColor: string
-}) {
-  if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-gray-100 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-        <div className="p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
-              <Icon size={16} className="text-red-500" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-              <p className="text-[11px] text-gray-400 mt-0.5">{message}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 justify-end mt-4">
-            <button onClick={onClose} className="px-3 py-1.5 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
-            <button onClick={onConfirm} className="px-3 py-1.5 text-[11px] font-semibold text-white rounded-lg transition-colors"
-              style={{ background: confirmColor }}>
-              {confirmLabel}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function CreateKeyModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState('')
@@ -429,26 +395,26 @@ export default function ApiKeysPage() {
       <CreateKeyModal open={showCreate} onClose={() => setShowCreate(false)} />
       <KeyDetailDrawer keyItem={selectedKey} open={selectedKey !== null} onClose={() => setSelectedKey(null)} />
 
-      <ConfirmModal
+      <ConfirmDialog
         open={rotateTarget !== null}
         onClose={() => setRotateTarget(null)}
         onConfirm={() => { setRotateTarget(null) }}
         title="Rotate API Key"
         message="This will generate a new key. The old key will stop working immediately. All services using this key will need to be updated."
-        icon={RefreshCw}
+        icon={<RefreshCw size={16} />}
         confirmLabel="Rotate Key"
-        confirmColor="linear-gradient(135deg, #F59E0B, #D97706)"
+        variant="primary"
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         open={revokeTarget !== null}
         onClose={() => setRevokeTarget(null)}
         onConfirm={() => { setRevokeTarget(null) }}
         title="Revoke API Key"
         message="This will permanently revoke this API key. Any services using this key will lose access immediately. This action cannot be undone."
-        icon={Ban}
+        icon={<Ban size={16} />}
         confirmLabel="Revoke Key"
-        confirmColor="linear-gradient(135deg, #EF4444, #DC2626)"
+        variant="danger"
       />
     </div>
     </PageTransition>
