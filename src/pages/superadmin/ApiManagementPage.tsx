@@ -9,6 +9,7 @@ import AdvancedButton from '../../components/superadmin/AdvancedButton'
 import { useAction } from '../../components/superadmin/useAction'
 import { PageTransition } from '../../components/superadmin/Animations'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
+import { formatNumber } from '../../lib/format'
 import type { ApiKeyEntry, WebhookEndpoint, RateLimitPolicy, ApiUsageMetric } from '../../types/superadmin'
 
 import { mockApiKeys, mockRateLimitPolicies, mockWebhookEndpoints, mockApiUsageData } from '../../data/superAdminMockData'
@@ -20,12 +21,6 @@ const apiUsageData: ApiUsageMetric[] = mockApiUsageData
 // ═══════════════════════════════════════════════════════════════
 // Utility
 // ═══════════════════════════════════════════════════════════════
-
-function formatNumber(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
-  return n.toLocaleString()
-}
 
 const keyStatusColors: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700',

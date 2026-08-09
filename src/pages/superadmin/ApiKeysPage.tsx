@@ -4,6 +4,7 @@ import {
   RefreshCw, Ban, ExternalLink,
   AlertTriangle, X, Shield, Activity,
 } from 'lucide-react'
+import { formatNumber } from '../../lib/format'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition } from '../../components/superadmin/Animations'
 import type { ApiKeyEntry } from '../../types/superadmin'
@@ -11,12 +12,6 @@ import type { ApiKeyEntry } from '../../types/superadmin'
 // ═══════════════════════════════════════════════════════════════
 // Utility
 // ═══════════════════════════════════════════════════════════════
-
-function formatNumber(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
-  return n.toLocaleString()
-}
 
 const statusColors: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700',

@@ -9,6 +9,7 @@ import { useToast } from '../../components/superadmin/Toast'
 import AdvancedButton from '../../components/superadmin/AdvancedButton'
 import { useAction } from '../../components/superadmin/useAction'
 import { PageTransition } from '../../components/superadmin/Animations'
+import { formatNumber, formatCurrency } from '../../lib/format'
 import type { TenantUsage, UsageMonthlyBreakdown, OverageCharge } from '../../types/superadmin'
 
 import { mockTenantUsageData, mockUsageMonthlyBreakdown, mockOverageCharges } from '../../data/superAdminMockData'
@@ -19,16 +20,6 @@ const overageCharges: OverageCharge[] = mockOverageCharges
 // ═══════════════════════════════════════════════════════════════
 // Utility
 // ═══════════════════════════════════════════════════════════════
-
-function formatCurrency(amount: number, currency = 'USD'): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
-}
-
-function formatNumber(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
-  return n.toLocaleString()
-}
 
 const usageStatusColors: Record<string, { text: string; bg: string; icon: typeof CheckCircle }> = {
   active:    { text: 'text-emerald-700', bg: 'bg-emerald-100', icon: CheckCircle },

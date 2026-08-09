@@ -8,6 +8,7 @@ import { useToast } from '../../components/superadmin/Toast'
 import AdvancedButton from '../../components/superadmin/AdvancedButton'
 import { useAction } from '../../components/superadmin/useAction'
 import { PageTransition } from '../../components/superadmin/Animations'
+import { formatNumber } from '../../lib/format'
 import type { JobQueue, JobEntry, ScheduledTask, WorkerPool } from '../../types/superadmin'
 
 import { mockJobQueues, mockJobEntries, mockScheduledTasks, mockWorkerPools } from '../../data/superAdminMockData'
@@ -19,12 +20,6 @@ const workerPools: WorkerPool[] = mockWorkerPools
 // ═══════════════════════════════════════════════════════════════
 // Utility
 // ═══════════════════════════════════════════════════════════════
-
-function formatNumber(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
-  return n.toLocaleString()
-}
 
 const queueStatusColors: Record<string, { text: string; bg: string; dot: string }> = {
   running:  { text: 'text-emerald-700', bg: 'bg-emerald-100', dot: '#10B981' },
