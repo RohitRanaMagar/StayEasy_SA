@@ -9,6 +9,7 @@ import {
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { useToast } from '../../components/superadmin/Toast'
 import { PageTransition } from '../../components/superadmin/Animations'
+import { saveCredentials } from '../../lib/superadmin-mock-auth'
 
 const timezones = [
   'Asia/Kathmandu', 'Asia/Kolkata', 'Asia/Dubai', 'Asia/Tokyo',
@@ -65,6 +66,10 @@ export default function SuperAdminVerify() {
       return
     }
     updateProfile({ email: newEmail })
+    const saved = JSON.parse(localStorage.getItem('superAdminSavedCredentials') || '{}')
+    if (saved.password) {
+      saveCredentials(newEmail, saved.password)
+    }
     showToast('success', 'Email updated')
   }
 

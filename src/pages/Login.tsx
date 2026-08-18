@@ -10,6 +10,7 @@ import { useSuperAdminStore } from '../components/superadmin/superAdminStore'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function extractError(err: unknown): string {
+  if (err instanceof Error) return err.message
   if (err instanceof AxiosError && err.response?.data) {
     const data = err.response.data as Record<string, unknown>
     if (typeof data.detail === 'string') return data.detail

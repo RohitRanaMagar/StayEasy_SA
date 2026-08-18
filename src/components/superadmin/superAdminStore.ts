@@ -20,6 +20,7 @@ import {
   mockAdminUsers, mockAdminRoles, mockApiKeys, mockAuditLogs,
   mockTickets, mockAnnouncements, mockSettings,
 } from '../../data/superAdminMockData'
+import { mockSuperAdminLogin, saveCredentials } from '../../lib/superadmin-mock-auth'
 
 // ─── Helper: generate unique IDs ──────────────────────────
 let _counter = Date.now()
@@ -412,25 +413,30 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
   revenueData: calcRevenueData(mockSubscriptions),
 
   // ─── Auth Actions (Mock) ─────────────────────────────
-  login: async (email, _password, rememberMe = true) => {
+  login: async (email, password, rememberMe = true) => {
+    const result = await mockSuperAdminLogin(email, password)
+
+    if (!result.success) {
+      throw new Error(result.error || 'Login failed')
+    }
+
     const storage = rememberMe ? localStorage : sessionStorage
-    const mockToken = `mock_token_${Date.now()}`
-    storage.setItem('accessToken', mockToken)
-    storage.setItem('refreshToken', `mock_refresh_${Date.now()}`)
-    storage.setItem('superAdminToken', mockToken)
+    storage.setItem('superAdminToken', result.token!)
+    storage.setItem('accessToken', result.token!)
+    storage.setItem('refreshToken', result.refreshToken!)
     storage.setItem('userType', 'superadmin')
+
     set({
-      isProfileComplete: true,
+      isProfileComplete: result.isProfileComplete ?? false,
       profile: {
         ...get().profile,
-        fullName: 'SuperAdmin',
         email: email,
-        isSeeded: false,
       },
     })
+
     return {
-      forcePasswordChange: false,
-      isProfileComplete: false,
+      forcePasswordChange: result.forcePasswordChange ?? false,
+      isProfileComplete: result.isProfileComplete ?? false,
       isSeeded: false,
     }
   },
@@ -649,8 +655,11 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
     }
   })),
 
-  changePassword: (_newPassword) => {
-    // Mock: just add an activity log
+  changePassword: (newPassword) => {
+    const currentEmail = get().profile.email
+    if (currentEmail) {
+      saveCredentials(currentEmail, newPassword)
+    }
     get().addAuditLog({
       admin: 'SuperAdmin', action: 'PASSWORD_CHANGED', target: 'self',
       details: 'SuperAdmin changed their password',
