@@ -35,7 +35,7 @@ export default function NotificationDropdown() {
       </div>
       <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/50">
         <button
-          onClick={() => navigate('/superadmin/profile/notifications')}
+          onClick={() => navigate('/superadmin/notifications')}
           className="w-full text-center text-[11px] font-medium text-[#2E86AB] hover:text-[#1a6b8a] transition-colors"
         >
           View all notifications →

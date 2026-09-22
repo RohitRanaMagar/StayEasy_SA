@@ -8,8 +8,7 @@ import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition } from '../../components/superadmin/Animations'
 import type { AdminUser, AdminRole } from '../../types/superadmin'
 
-import { mockAdminRoles } from '../../data/superAdminMockData'
-const adminRoles: AdminRole[] = mockAdminRoles
+const adminRoles: AdminRole[] = []
 
 // ═══════════════════════════════════════════════════════════════
 // Utility

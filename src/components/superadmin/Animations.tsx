@@ -1,4 +1,4 @@
-import { motion, AnimatePresence, type Variants } from 'framer-motion'
+  import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import type { ReactNode } from 'react'
 
 // ─── Page Transition ──────────────────────────────────────

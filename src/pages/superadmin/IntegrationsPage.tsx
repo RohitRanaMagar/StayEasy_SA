@@ -7,10 +7,9 @@ import {
 import { useToast } from '../../components/superadmin/Toast'
 import type { IntegrationService, ApiKey, WebhookEndpoint } from '../../types/superadmin'
 
-import { mockIntegrationServices, mockIntegrationApiKeys, mockWebhookEndpoints } from '../../data/superAdminMockData'
-const integrationServices: IntegrationService[] = mockIntegrationServices
-const apiKeys: ApiKey[] = mockIntegrationApiKeys
-const webhookEndpoints: WebhookEndpoint[] = mockWebhookEndpoints
+const integrationServices: IntegrationService[] = []
+const apiKeys: ApiKey[] = []
+const webhookEndpoints: WebhookEndpoint[] = []
 
 // ═══════════════════════════════════════════════════════════════
 // Utility

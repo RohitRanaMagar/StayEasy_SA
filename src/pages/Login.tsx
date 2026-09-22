@@ -56,12 +56,8 @@ export default function Login() {
     setLoading(true)
     try {
       if (isSuperAdmin) {
-        const result = await superAdminLogin(email, password, remember)
-        if (result.forcePasswordChange || !result.isProfileComplete) {
-          navigate('/superadmin/profile')
-        } else {
-          navigate('/superadmin')
-        }
+        await superAdminLogin(email, password, remember)
+        navigate('/superadmin')
       } else {
         const params = new URLSearchParams()
         params.append('grant_type', 'password')

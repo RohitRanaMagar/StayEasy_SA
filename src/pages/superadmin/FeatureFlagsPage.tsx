@@ -9,11 +9,10 @@ import {
 import { useToast } from '../../components/superadmin/Toast'
 import type { SuperAdminFeatureFlag, TenantBrandingConfig, FeatureFlagCategory, TenantFeatureOverride, FeatureFlagActivity } from '../../types/superadmin'
 
-import { mockFeatureFlagCategories, mockFeatureFlagActivities } from '../../data/superAdminMockData'
-const featureFlagCategories: FeatureFlagCategory[] = mockFeatureFlagCategories
+const featureFlagCategories: FeatureFlagCategory[] = []
 const tenantFeatureOverrides: TenantFeatureOverride[] = []
 const tenantBrandingConfigs: TenantBrandingConfig[] = []
-const featureFlagActivities: FeatureFlagActivity[] = mockFeatureFlagActivities
+const featureFlagActivities: FeatureFlagActivity[] = []
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition } from '../../components/superadmin/Animations'
 

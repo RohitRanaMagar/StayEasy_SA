@@ -4,7 +4,6 @@ const SUPER_ADMIN_KEYS = [
   'refreshToken',
   'tempToken',
   'userType',
-  'isProfileComplete',
 ] as const
 
 export function superAdminLogout(): void {

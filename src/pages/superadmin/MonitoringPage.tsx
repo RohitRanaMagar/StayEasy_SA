@@ -1,426 +1,84 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
-  Bell, AlertTriangle, Activity,
-  Server, Wifi, ArrowUpRight, ArrowDownRight, AlertOctagon,
-  Download, RefreshCw,
+  Activity, Server, Globe, Database, CreditCard, Mail, Search, Layers,
+  Wifi, HardDrive, Zap, AlertTriangle, CheckCircle, Clock, Eye,
+  Monitor, Cpu, MemoryStick, HardDriveIcon, Network,
+  ChevronDown, ExternalLink, RefreshCw,
 } from 'lucide-react'
+import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { useToast } from '../../components/superadmin/Toast'
-import type { ActiveAlert, AlertRule, UptimeCheck, PerformancePoint, AlertHistoryItem, IncidentItem } from '../../types/superadmin'
-
-import { mockActiveAlerts, mockAlertRules, mockUptimeChecks, mockPerformanceData, mockAlertHistory, mockIncidents } from '../../data/superAdminMockData'
-const activeAlerts: ActiveAlert[] = mockActiveAlerts
-const alertRules: AlertRule[] = mockAlertRules
-const uptimeChecks: UptimeCheck[] = mockUptimeChecks
-const performanceData: PerformancePoint[] = mockPerformanceData
-const alertHistory: AlertHistoryItem[] = mockAlertHistory
-const incidentData: IncidentItem[] = mockIncidents
+import { PageTransition } from '../../components/superadmin/Animations'
 
 // ═══════════════════════════════════════════════════════════════
-// Utility
+// Helpers
 // ═══════════════════════════════════════════════════════════════
 
-const severityConfig: Record<string, { text: string; bg: string; icon: typeof AlertTriangle; hex: string }> = {
-  critical:    { text: 'text-red-700',  bg: 'bg-red-100',    icon: AlertOctagon, hex: '#EF4444' },
-  warning:     { text: 'text-yellow-700', bg: 'bg-yellow-100', icon: AlertTriangle, hex: '#F59E0B' },
-  info:        { text: 'text-blue-700', bg: 'bg-blue-100',   icon: Activity,      hex: '#3B82F6' },
+const serviceIconMap: Record<string, typeof Zap> = {
+  Zap, Server, Globe, CreditCard, Database, Mail, Search, Layers, Wifi, HardDrive,
 }
 
-const alertStatusColors: Record<string, string> = {
-  firing:        'bg-red-100 text-red-700',
-  acknowledged:  'bg-yellow-100 text-yellow-700',
-  resolved:      'bg-emerald-100 text-emerald-700',
+const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
+  operational:   { color: 'bg-emerald-500', bg: 'bg-emerald-50', label: 'Operational' },
+  degraded:      { color: 'bg-amber-500',   bg: 'bg-amber-50',   label: 'Degraded' },
+  down:          { color: 'bg-red-500',     bg: 'bg-red-50',     label: 'Down' },
+  maintenance:   { color: 'bg-blue-500',    bg: 'bg-blue-50',    label: 'Maintenance' },
+  healthy:       { color: 'bg-emerald-500', bg: 'bg-emerald-50', label: 'Healthy' },
+  slow:          { color: 'bg-amber-500',   bg: 'bg-amber-50',   label: 'Slow' },
+  online:        { color: 'bg-emerald-500', bg: 'bg-emerald-50', label: 'Online' },
+  warning:       { color: 'bg-amber-500',   bg: 'bg-amber-50',   label: 'Warning' },
+  offline:       { color: 'bg-red-500',     bg: 'bg-red-50',     label: 'Offline' },
 }
 
-const uptimeStatusColors: Record<string, { text: string; bg: string; dot: string }> = {
-  up:   { text: 'text-emerald-700', bg: 'bg-emerald-100', dot: '#10B981' },
-  down: { text: 'text-red-700',     bg: 'bg-red-100',     dot: '#EF4444' },
-  slow: { text: 'text-yellow-700',  bg: 'bg-yellow-100',  dot: '#F59E0B' },
+const incidentSeverity: Record<string, { color: string; bg: string }> = {
+  critical: { color: 'text-red-700',   bg: 'bg-red-100' },
+  major:    { color: 'text-amber-700', bg: 'bg-amber-100' },
+  minor:    { color: 'text-blue-700',  bg: 'bg-blue-100' },
+}
+
+const incidentStatus: Record<string, { color: string; bg: string }> = {
+  resolved:      { color: 'text-emerald-700', bg: 'bg-emerald-100' },
+  monitoring:    { color: 'text-amber-700',   bg: 'bg-amber-100' },
+  investigating: { color: 'text-red-700',     bg: 'bg-red-100' },
+  identified:    { color: 'text-blue-700',    bg: 'bg-blue-100' },
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Stat Card
+// Mini Bar Chart (CSS-only)
 // ═══════════════════════════════════════════════════════════════
 
-function StatCard({ icon: Icon, label, value, sub, color = '#2E86AB', trend }: {
-  icon: typeof Bell; label: string; value: string; sub?: string; color?: string; trend?: { value: string; up: boolean }
-}) {
+function MiniBarChart({ data, labels, color, max }: { data: number[]; labels: string[]; color: string; max: number }) {
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition-all duration-200 hover:border-gray-200">
-      <div className="flex items-start justify-between mb-2">
-        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">{label}</span>
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${color}12` }}>
-          <Icon size={16} style={{ color }} />
-        </div>
-      </div>
-      <div className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>{value}</div>
-      {sub && <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>}
-      {trend && (
-        <div className={`flex items-center gap-1 mt-2 text-[11px] font-medium ${trend.up ? 'text-emerald-600' : 'text-red-500'}`}>
-          {trend.up ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-          {trend.value}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Performance Chart (SVG)
-// ═══════════════════════════════════════════════════════════════
-
-function PerformanceChart({ data }: { data: typeof performanceData }) {
-  const [metric, setMetric] = useState<'responseTimeMs' | 'errorRatePct' | 'throughput'>('responseTimeMs')
-
-  if (data.length === 0) {
-    return <div className="text-[11px] text-gray-400 py-8 text-center">No performance data</div>
-  }
-
-  const values = data.map(d => d[metric])
-  const maxVal = Math.max(...values)
-  const minVal = Math.min(...values)
-  const range = maxVal - minVal || 1
-  const w = 700, h = 200, pad = { t: 20, r: 16, b: 34, l: 50 }
-  const chartW = w - pad.l - pad.r
-  const chartH = h - pad.t - pad.b
-
-  const points = values.map((v, i) => ({
-    x: pad.l + (i / (values.length - 1)) * chartW,
-    y: pad.t + (1 - (v - minVal) / range) * chartH,
-  }))
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-  const areaPath = linePath + ` L ${points[points.length - 1].x} ${h - pad.b} L ${points[0].x} ${h - pad.b} Z`
-
-  const color = metric === 'responseTimeMs' ? '#2E86AB' : metric === 'errorRatePct' ? '#EF4444' : '#10B981'
-  const formatVal = (v: number) => metric === 'responseTimeMs' ? `${v}ms` : metric === 'errorRatePct' ? `${v}%` : `${v.toLocaleString()} req/s`
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900">
-          {metric === 'responseTimeMs' ? 'Response Time (24h)' : metric === 'errorRatePct' ? 'Error Rate (24h)' : 'Throughput (24h)'}
-        </h3>
-        <div className="flex items-center gap-1">
-          {(['responseTimeMs', 'errorRatePct', 'throughput'] as const).map(m => (
-            <button key={m} onClick={() => setMetric(m)}
-              className={`px-2.5 py-1 text-[10px] font-medium rounded-md transition-all ${
-                metric === m ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-              }`}>
-              {m === 'responseTimeMs' ? 'Latency' : m === 'errorRatePct' ? 'Errors' : 'Throughput'}
-            </button>
-          ))}
-        </div>
-      </div>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: 200 }}>
-        <defs>
-          <linearGradient id={`perfGrad`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.2} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        {[0, 0.25, 0.5, 0.75, 1].map(f => {
-          const y = pad.t + f * chartH
-          const val = maxVal - f * range
-          return (
-            <g key={f}>
-              <line x1={pad.l} y1={y} x2={w - pad.r} y2={y} stroke="#f0f0f0" strokeDasharray="4 4" />
-              <text x={pad.l - 8} y={y + 4} textAnchor="end" className="fill-gray-400" fontSize={10}>
-                {formatVal(val)}
-              </text>
-            </g>
-          )
-        })}
-        <path d={areaPath} fill={`url(#perfGrad)`} />
-        <path d={linePath} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-        {points.filter((_, i) => i % 4 === 0 || i === points.length - 1).map((_, idx) => {
-          const i = idx * 4 > points.length - 1 ? points.length - 1 : idx * 4
-          return (
-            <g key={idx}>
-              <circle cx={points[i]!.x} cy={points[i]!.y} r={3.5} fill={color} stroke="white" strokeWidth={2} />
-            </g>
-          )
-        })}
-        {data.filter((_, i) => i % 4 === 0).map((d, i) => (
-          <text key={i} x={pad.l + (i * 4 / (data.length - 1)) * chartW} y={h - 6} textAnchor="middle" className="fill-gray-400" fontSize={9}>
-            {d.timestamp}
-          </text>
-        ))}
-      </svg>
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Active Alerts List
-// ═══════════════════════════════════════════════════════════════
-
-function ActiveAlertsPanel({ alerts }: { alerts: ActiveAlert[] }) {
-  const { showToast } = useToast()
-  const [filter, setFilter] = useState<'all' | 'firing' | 'acknowledged' | 'resolved'>('all')
-
-  const filtered = alerts.filter(a => filter === 'all' || a.status === filter)
-  const firingCount = alerts.filter(a => a.status === 'firing').length
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900">Active Alerts</h3>
-          {firingCount > 0 && (
-            <p className="text-[11px] text-red-500 mt-0.5">{firingCount} firing · {alerts.filter(a => a.status === 'acknowledged').length} acknowledged</p>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {(['all', 'firing', 'acknowledged', 'resolved'] as const).map(s => (
-            <button key={s} onClick={() => setFilter(s)}
-              className={`px-2.5 py-1 text-[9px] font-medium rounded-md transition-all ${
-                filter === s ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'
-              }`}>
-              {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="space-y-2">
-        {filtered.length === 0 ? (
-          <div className="text-center py-6 text-gray-400 text-[13px]">No alerts match the filter.</div>
-        ) : (
-          filtered.map(alert => {
-            const sc = severityConfig[alert.severity]
-            const SeverityIcon = sc.icon
-            return (
-              <div key={alert.id} className="p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-all">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${sc.hex}12` }}>
-                      <SeverityIcon size={14} style={{ color: sc.hex }} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[12px] font-semibold text-gray-800">{alert.ruleName}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-semibold ${sc.bg} ${sc.text}`}>
-                          {alert.severity}
-                        </span>
-                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-semibold ${alertStatusColors[alert.status]}`}>
-                          {alert.status}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-gray-500 mt-1 leading-relaxed">{alert.description}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-[9px] text-gray-400">
-                        <span>Current: <strong className="text-gray-600">{alert.currentValue}</strong></span>
-                        <span>Threshold: <strong className="text-gray-600">{alert.threshold}</strong></span>
-                        <span>Started: {alert.startedAt}</span>
-                        {alert.acknowledgedAt && <span>Ack: {alert.acknowledgedAt}</span>}
-                        {alert.resolvedAt && <span>Resolved: {alert.resolvedAt}</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => showToast('info', `Acknowledge alert: ${alert.ruleName}`)}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                      <Bell size={12} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )
-          })
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Uptime Checks Table
-// ═══════════════════════════════════════════════════════════════
-
-function UptimeTable({ checks }: { checks: UptimeCheck[] }) {
-  const { showToast } = useToast()
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">Endpoint Uptime</h3>
-        <button onClick={() => showToast('success', 'Uptime checks refreshed (mock)')}
-          className="flex items-center gap-1 text-[11px] font-medium text-[#2E86AB] hover:text-[#1A6B8A] transition-colors">
-          <RefreshCw size={12} /> Refresh All
-        </button>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-[12px]">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Endpoint</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Status</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Response</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">7d Uptime</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">30d Uptime</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Region</th>
-              <th className="text-right py-2.5 px-3 text-gray-400 font-medium">Checked</th>
-            </tr>
-          </thead>
-          <tbody>
-            {checks.map(c => {
-              const uc = uptimeStatusColors[c.status]
-              const uptimeColor = c.uptime30d >= 99.9 ? 'text-emerald-600' : c.uptime30d >= 99.5 ? 'text-yellow-600' : 'text-red-500'
-              return (
-                <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                  <td className="py-3 px-3">
-                    <div className="text-[12px] font-medium text-gray-800">{c.name}</div>
-                    <div className="text-[9px] font-mono text-gray-400 truncate max-w-[180px]">{c.endpoint}</div>
-                  </td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: uc.dot }} />
-                      <span className={`text-[11px] font-medium capitalize ${uc.text}`}>{c.status}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className={`font-mono text-[12px] font-medium ${c.responseTimeMs > 500 ? 'text-red-500' : c.responseTimeMs > 200 ? 'text-yellow-600' : 'text-gray-700'}`}>
-                      {c.responseTimeMs === 0 ? '—' : `${c.responseTimeMs}ms`}
-                    </span>
-                  </td>
-                  <td className={`py-3 px-3 text-[12px] font-semibold ${uptimeColor}`}>{c.uptime7d.toFixed(2)}%</td>
-                  <td className={`py-3 px-3 text-[12px] font-semibold ${uptimeColor}`}>{c.uptime30d.toFixed(2)}%</td>
-                  <td className="py-3 px-3 text-[11px] text-gray-500">{c.region}</td>
-                  <td className="py-3 px-3 text-right text-[10px] text-gray-400">{c.lastChecked}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Alert Rules Sidebar
-// ═══════════════════════════════════════════════════════════════
-
-function AlertRulesPanel({ rules }: { rules: AlertRule[] }) {
-  const enabledCount = rules.filter(r => r.status === 'enabled').length
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Alert Rules</h3>
-      <p className="text-[11px] text-gray-400 mb-3">{enabledCount} of {rules.length} rules enabled</p>
-      <div className="space-y-2">
-        {rules.map(rule => {
-          const sc = severityConfig[rule.severity]
-          return (
-            <div key={rule.id} className="p-2.5 rounded-lg border border-gray-100 hover:border-gray-200 transition-all">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-2 min-w-0">
-                  <div className="w-6 h-6 rounded flex items-center justify-center shrink-0" style={{ background: `${sc.hex}12` }}>
-                    <sc.icon size={11} style={{ color: sc.hex }} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-medium text-gray-800 truncate">{rule.name}</div>
-                    <div className="text-[9px] text-gray-400 mt-0.5">
-                      {rule.metric} {rule.condition} {rule.threshold}{rule.unit}
-                    </div>
-                  </div>
-                </div>
-                <div className={`px-1.5 py-0.5 rounded text-[8px] font-semibold shrink-0 ${
-                  rule.status === 'enabled' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                }`}>
-                  {rule.status}
-                </div>
-              </div>
+    <div className="flex items-end gap-[3px] h-20">
+      {data.map((v, i) => (
+        <div key={i} className="flex-1 flex flex-col items-center group relative">
+          <div
+            className="w-full rounded-t-sm transition-all hover:opacity-80"
+            style={{
+              height: `${Math.max((v / max) * 100, 2)}%`,
+              background: color,
+            }}
+          />
+          {/* Tooltip */}
+          <div className="absolute bottom-full mb-1 hidden group-hover:block z-10">
+            <div className="bg-gray-900 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap">
+              {v} {labels[i]}
             </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Recent Incidents
-// ═══════════════════════════════════════════════════════════════
-
-function RecentIncidents() {
-  const navigate = useNavigate()
-  const recentIncidents = incidentData.filter(i => i.status === 'monitoring' || i.status === 'investigating' || i.status === 'identified')
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Active Incidents ({recentIncidents.length})</h3>
-      <div className="space-y-2">
-        {recentIncidents.length === 0 ? (
-          <div className="text-center py-4 text-gray-400 text-[12px]">No active incidents</div>
-        ) : (
-          recentIncidents.map(inc => {
-            const sev = inc.severity === 'critical' ? '#EF4444' : inc.severity === 'major' ? '#F59E0B' : '#3B82F6'
-            return (
-              <div key={inc.id} className="p-3 rounded-lg border border-gray-100">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ background: sev }} />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[12px] font-medium text-gray-800">{inc.title}</span>
-                      <span className={`px-1.5 py-0.5 rounded text-[8px] font-semibold ${
-                        inc.severity === 'critical' ? 'bg-red-100 text-red-700' :
-                        inc.severity === 'major' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
-                      }`}>{inc.severity}</span>
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-1">{inc.description}</p>
-                    <div className="flex items-center gap-2 mt-1 text-[9px] text-gray-400">
-                      <span>{inc.timestamp}</span>
-                      <span>·</span>
-                      <span>{inc.services.join(', ')}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })
-        )}
-        <div className="pt-2">
-          <button onClick={() => navigate('/superadmin/audit-logs')}
-            className="text-[11px] font-medium text-[#2E86AB] hover:text-[#1A6B8A] transition-colors">
-            View all incidents →
-          </button>
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Alert History Timeline
+// Usage Bar
 // ═══════════════════════════════════════════════════════════════
 
-function AlertHistoryPanel() {
+function UsageBar({ value, max, color }: { value: number; max: number; color: string }) {
+  const pct = Math.min((value / max) * 100, 100)
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Alert History</h3>
-      <div className="space-y-2">
-        {alertHistory.slice(0, 6).map(h => {
-          const sc = severityConfig[h.severity]
-          return (
-            <div key={h.id} className="flex items-start gap-3 py-2 border-b border-gray-50 last:border-0">
-              <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sc.hex }} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-gray-800">{h.ruleName}</span>
-                  <span className={`px-1 py-0.5 rounded text-[7px] font-semibold ${sc.bg} ${sc.text}`}>
-                    {h.severity}
-                  </span>
-                  <span className={`px-1 py-0.5 rounded text-[7px] font-semibold ${alertStatusColors[h.status]}`}>
-                    {h.status}
-                  </span>
-                </div>
-                <div className="text-[9px] text-gray-400 mt-0.5">
-                  {h.startedAt} · Duration: {h.duration}
-                  {h.resolvedAt && ` · Resolved at ${h.resolvedAt}`}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
     </div>
   )
 }
@@ -430,91 +88,304 @@ function AlertHistoryPanel() {
 // ═══════════════════════════════════════════════════════════════
 
 export default function MonitoringPage() {
+  const {
+    systemHealth, servicesStatus, incidents,
+    cpuMetrics, memoryMetrics, diskIOMetrics, networkMetrics,
+    dependencyChecks, serverNodes, hourlyLabels,
+  } = useSuperAdminStore()
   const { showToast } = useToast()
-  const [activeTab, setActiveTab] = useState<'alerts' | 'uptime'>('alerts')
 
-  const firingAlerts = activeAlerts.filter(a => a.status === 'firing').length
-  const upCount = uptimeChecks.filter(c => c.status === 'up').length
-  const avgResponseTime = Math.round(uptimeChecks.filter(c => c.responseTimeMs > 0)
-    .reduce((s, c) => s + c.responseTimeMs, 0) / uptimeChecks.filter(c => c.responseTimeMs > 0).length)
-  const avgErrorRate = (performanceData.reduce((s, d) => s + d.errorRatePct, 0) / performanceData.length).toFixed(2)
+  const activeIncidents = incidents.filter(i => i.status !== 'resolved')
+  const resolvedIncidents = incidents.filter(i => i.status === 'resolved')
 
   return (
-    <div className="space-y-3">
-      {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-
-        <div className="flex items-center gap-2 sm:ml-auto">
-          <select className="text-[11px] border border-gray-200 rounded-lg px-2 py-1.5 text-gray-500 outline-none">
-            <option>Last 24 Hours</option>
-            <option>Last 7 Days</option>
-            <option>Last 30 Days</option>
-          </select>
-          <button onClick={() => showToast('success', 'Monitoring data exported (mock)')}
-            className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <Download size={13} /> Export
+    <PageTransition>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>Monitoring</h1>
+            <p className="text-[13px] text-gray-400 mt-0.5">System health, services and infrastructure</p>
+          </div>
+          <button
+            onClick={() => showToast('info', 'Refreshed monitoring data')}
+            className="flex items-center gap-1.5 px-3 py-2 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <RefreshCw size={13} /> Refresh
           </button>
         </div>
-      </div>
 
-      {/* ── Key Stats ──────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={AlertOctagon} label="Active Alerts" value={firingAlerts.toString()}
-          sub={`${activeAlerts.filter(a => a.status !== 'resolved').length} unresolved`}
-          color={firingAlerts > 0 ? '#EF4444' : '#10B981'}
-          trend={{ value: firingAlerts > 0 ? `${firingAlerts} firing now` : 'All clear', up: firingAlerts === 0 }} />
-        <StatCard icon={Server} label="Endpoints Up" value={`${upCount}/${uptimeChecks.length}`}
-          sub={`${uptimeChecks.filter(c => c.status === 'slow').length} degraded`}
-          color={upCount === uptimeChecks.length ? '#10B981' : upCount > uptimeChecks.length - 3 ? '#F59E0B' : '#EF4444'} />
-        <StatCard icon={Activity} label="Avg Response" value={`${avgResponseTime}ms`}
-          sub="Across all endpoints" color="#2E86AB"
-          trend={{ value: avgResponseTime < 200 ? 'Healthy' : 'Elevated', up: avgResponseTime < 200 }} />
-        <StatCard icon={AlertTriangle} label="Error Rate" value={`${avgErrorRate}%`}
-          sub="Average over 24 hours" color="#8B5CF6"
-          trend={{ value: parseFloat(avgErrorRate) < 0.2 ? 'Within threshold' : 'Above threshold', up: parseFloat(avgErrorRate) < 0.2 }} />
-      </div>
+        {/* Health Banner */}
+        {systemHealth && (
+          <div className="bg-white rounded-xl border border-gray-100 p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`w-3 h-3 rounded-full ${systemHealth.status === 'healthy' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`} />
+              <span className="text-sm font-semibold text-gray-900">System Status: <span className="text-emerald-600 capitalize">{systemHealth.status}</span></span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+              {[
+                { label: 'Uptime', value: `${systemHealth.serverUptime}%`, sub: `+${systemHealth.serverUptimeChange}%` },
+                { label: 'Error Rate', value: `${systemHealth.errorRate}%`, sub: `+${systemHealth.errorRateChange}%` },
+                { label: 'Avg Response', value: `${systemHealth.avgResponseTime}ms`, sub: null },
+                { label: 'Active Conn.', value: String(systemHealth.activeConnections), sub: null },
+                { label: 'Requests/s', value: String(systemHealth.requestsPerSecond), sub: null },
+                { label: 'Queue Depth', value: String(systemHealth.queueDepth), sub: `${systemHealth.queueDepthChange > 0 ? '+' : ''}${systemHealth.queueDepthChange}` },
+                { label: 'Cache Hit', value: `${systemHealth.cacheHitRatio}%`, sub: `+${systemHealth.cacheHitRatioChange}%` },
+                { label: 'Throughput', value: `${systemHealth.throughput}/s`, sub: null },
+              ].map((m, i) => (
+                <div key={i} className="text-center">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">{m.label}</p>
+                  <p className="text-lg font-bold text-gray-900 mt-0.5">{m.value}</p>
+                  {m.sub && <p className="text-[10px] text-gray-400">{m.sub}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* ── Performance Chart ──────────────────────────── */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
-        <PerformanceChart data={performanceData} />
-      </div>
+        {/* Service Status Grid */}
+        <div>
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Services</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            {servicesStatus.map(s => {
+              const st = statusConfig[s.status] || statusConfig.operational
+              const Icon = serviceIconMap[s.icon] || Server
+              return (
+                <div key={s.name} className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-shadow">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                      <Icon size={16} className="text-gray-500" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${st.color}`} />
+                      <span className={`text-[10px] font-semibold ${st.color === 'bg-emerald-500' ? 'text-emerald-600' : st.color === 'bg-amber-500' ? 'text-amber-600' : st.color === 'bg-red-500' ? 'text-red-600' : 'text-blue-600'}`}>
+                        {st.label}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[13px] font-semibold text-gray-800">{s.name}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{s.description}</p>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                    <span className="text-[11px] text-gray-400">Uptime <span className="font-medium text-gray-600">{s.uptime}</span></span>
+                    <span className="text-[11px] text-gray-400">Latency <span className="font-medium text-gray-600">{s.latency}</span></span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
 
-      {/* ── Two-column layout ──────────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-3">
-        {/* Main */}
-        <div className="xl:col-span-3 space-y-3">
-          {/* Tabs */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 w-fit">
-            <button onClick={() => setActiveTab('alerts')}
-              className={`px-4 py-1.5 text-[12px] font-medium rounded-md transition-all ${
-                activeTab === 'alerts' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-              }`}>
-              <Bell size={13} className="inline mr-1.5" />
-              Alerts ({activeAlerts.length})
-            </button>
-            <button onClick={() => setActiveTab('uptime')}
-              className={`px-4 py-1.5 text-[12px] font-medium rounded-md transition-all ${
-                activeTab === 'uptime' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-              }`}>
-              <Wifi size={13} className="inline mr-1.5" />
-              Uptime ({uptimeChecks.length})
-            </button>
+        {/* Active Incidents */}
+        {activeIncidents.length > 0 && (
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Active Incidents</p>
+            <div className="space-y-3">
+              {activeIncidents.map(inc => {
+                const sev = incidentSeverity[inc.severity] || incidentSeverity.minor
+                const st = incidentStatus[inc.status] || incidentStatus.investigating
+                return (
+                  <div key={inc.id} className="bg-white rounded-xl border border-gray-100 p-5">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle size={14} className={sev.color} />
+                        <h3 className="text-[13px] font-semibold text-gray-900">{inc.title}</h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${sev.bg} ${sev.color}`}>{inc.severity}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${st.bg} ${st.color}`}>{inc.status}</span>
+                      </div>
+                    </div>
+                    <p className="text-[12px] text-gray-500 mb-3">{inc.description}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-gray-400">Affected:</span>
+                        {inc.services.map(svc => (
+                          <span key={svc} className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-600">{svc}</span>
+                        ))}
+                      </div>
+                      <span className="text-[11px] text-gray-400">{inc.timestamp}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Resource Metrics */}
+        <div>
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Resource Usage (24h)</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { metrics: cpuMetrics, color: '#2E86AB', icon: Cpu },
+              { metrics: memoryMetrics, color: '#7C3AED', icon: MemoryStick },
+              { metrics: diskIOMetrics, color: '#F59E0B', icon: HardDriveIcon },
+              { metrics: networkMetrics, color: '#10B981', icon: Network },
+            ].map(({ metrics, color, icon: Icon }) => (
+              <div key={metrics.label} className="bg-white rounded-xl border border-gray-100 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Icon size={14} style={{ color }} />
+                    <span className="text-[12px] font-semibold text-gray-700">{metrics.label}</span>
+                  </div>
+                  <span className="text-[11px] text-gray-400">{metrics.unit}</span>
+                </div>
+                <div className="flex items-end justify-between mb-2">
+                  <span className="text-xl font-bold text-gray-900">{metrics.current}</span>
+                  <span className="text-[11px] text-gray-400">Avg {metrics.average} · Max {metrics.max}</span>
+                </div>
+                <MiniBarChart data={metrics.data} labels={hourlyLabels} color={color} max={metrics.max} />
+                <div className="flex justify-between mt-1">
+                  <span className="text-[9px] text-gray-300">00:00</span>
+                  <span className="text-[9px] text-gray-300">12:00</span>
+                  <span className="text-[9px] text-gray-300">23:00</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Two-column: Server Nodes + Dependencies */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Server Nodes */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Server Nodes</p>
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Node</th>
+                    <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Region</th>
+                    <th className="text-center px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">CPU</th>
+                    <th className="text-center px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Memory</th>
+                    <th className="text-center px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Disk</th>
+                    <th className="text-center px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Uptime</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serverNodes.map(n => {
+                    const st = statusConfig[n.status] || statusConfig.online
+                    return (
+                      <tr key={n.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Server size={13} className="text-gray-400" />
+                            <span className="text-[12px] font-semibold text-gray-800">{n.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] text-gray-500 font-mono">{n.region}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="w-16 mx-auto">
+                            <UsageBar value={n.cpu} max={100} color={n.cpu > 80 ? '#EF4444' : n.cpu > 60 ? '#F59E0B' : '#2E86AB'} />
+                            <p className="text-[10px] text-center text-gray-500 mt-1">{n.cpu}%</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="w-16 mx-auto">
+                            <UsageBar value={n.memory} max={100} color={n.memory > 80 ? '#EF4444' : n.memory > 60 ? '#F59E0B' : '#7C3AED'} />
+                            <p className="text-[10px] text-center text-gray-500 mt-1">{n.memory}%</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="w-16 mx-auto">
+                            <UsageBar value={n.disk} max={100} color={n.disk > 80 ? '#EF4444' : n.disk > 60 ? '#F59E0B' : '#F59E0B'} />
+                            <p className="text-[10px] text-center text-gray-500 mt-1">{n.disk}%</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${st.bg} ${st.color === 'bg-emerald-500' ? 'text-emerald-700' : st.color === 'bg-amber-500' ? 'text-amber-700' : 'text-red-700'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${st.color}`} /> {st.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-[11px] text-gray-500">{n.uptime}</span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {activeTab === 'alerts' ? (
-            <ActiveAlertsPanel alerts={activeAlerts} />
-          ) : (
-            <UptimeTable checks={uptimeChecks} />
-          )}
+          {/* Dependency Checks */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">External Dependencies</p>
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Service</th>
+                    <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Endpoint</th>
+                    <th className="text-center px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Latency</th>
+                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Checked</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dependencyChecks.map(d => {
+                    const st = statusConfig[d.status] || statusConfig.healthy
+                    return (
+                      <tr key={d.name} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="text-[12px] font-semibold text-gray-800">{d.name}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] text-gray-400 font-mono">{d.endpoint}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${st.bg} ${st.color === 'bg-emerald-500' ? 'text-emerald-700' : st.color === 'bg-amber-500' ? 'text-amber-700' : 'text-red-700'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${st.color}`} /> {st.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-[12px] text-gray-600 font-mono">{d.latency}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-[11px] text-gray-400">{d.lastChecked}</span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="xl:col-span-1 space-y-4">
-          <AlertRulesPanel rules={alertRules} />
-          <RecentIncidents />
-          <AlertHistoryPanel />
-        </div>
+        {/* Resolved Incidents */}
+        {resolvedIncidents.length > 0 && (
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Recent Incidents (Resolved)</p>
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              {resolvedIncidents.map(inc => {
+                const sev = incidentSeverity[inc.severity] || incidentSeverity.minor
+                return (
+                  <div key={inc.id} className="flex items-start gap-4 px-5 py-4 border-b border-gray-50 last:border-0">
+                    <CheckCircle size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[13px] font-medium text-gray-800">{inc.title}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${sev.bg} ${sev.color}`}>{inc.severity}</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500">{inc.description}</p>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-[10px] text-gray-400">{inc.timestamp} → {inc.resolvedAt}</span>
+                        {inc.services.map(s => (
+                          <span key={s} className="px-1 py-0.5 bg-gray-50 rounded text-[9px] text-gray-500">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </PageTransition>
   )
 }

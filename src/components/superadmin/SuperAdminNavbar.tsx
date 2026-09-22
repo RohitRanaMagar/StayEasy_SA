@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, LogOut, Settings, User, Menu, RotateCw, Calendar } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Settings, Menu, RotateCw, Calendar } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSuperAdminStore } from './superAdminStore'
@@ -15,10 +15,9 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
-  const location = useLocation()
   const profile = useSuperAdminStore(s => s.profile)
-
-  const isProfilePage = location.pathname.startsWith('/superadmin/profile')
+  const location = useLocation()
+  const isProfilePage = location.pathname.includes('/profile')
 
   const handleLogout = () => {
     superAdminLogout()
@@ -78,7 +77,7 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
         {/* Notifications */}
         <div className="relative group">
           <button
-            onClick={() => navigate('/superadmin/profile/notifications')}
+            onClick={() => navigate('/superadmin/notifications')}
             className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           >
             <Bell size={18} />
@@ -111,10 +110,10 @@ export default function SuperAdminNavbar({ title, subtitle, onToggleMobile }: Su
               </div>
               <div className="py-1">
                 <button
-                  onClick={() => { navigate('/superadmin/profile'); setMenuOpen(false) }}
+                  onClick={() => { navigate('/superadmin/settings'); setMenuOpen(false) }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                 >
-                  <User size={15} /> Profile
+                  <Settings size={15} /> Settings
                 </button>
                 <button
                   onClick={() => { navigate('/superadmin/settings'); setMenuOpen(false) }}

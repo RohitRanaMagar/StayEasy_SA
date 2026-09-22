@@ -1,14 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Package, Check, X, Plus, Edit, Archive, DollarSign,
-  Users, Home, Layers, Loader2,
+  Users, Home, Layers, Loader2, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useToast } from '../../components/superadmin/Toast'
 import type { Plan, PlanChangeLog } from '../../types/superadmin'
 
-import { mockPlanChangeLogs } from '../../data/superAdminMockData'
-const planChangeLogs: PlanChangeLog[] = mockPlanChangeLogs
+const planChangeLogs: PlanChangeLog[] = []
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition } from '../../components/superadmin/Animations'
 
@@ -80,7 +79,7 @@ function PlanComparisonTable({ plans }: { plans: Plan[] }) {
 // Plan Card
 // ═══════════════════════════════════════════════════════════════
 
-function PlanCard({ plan, onEdit, onArchive }: { plan: Plan; onEdit: (p: Plan) => void; onArchive: (p: Plan) => void }) {
+function PlanCard({ plan, onEdit, onArchive, isActive }: { plan: Plan; onEdit: (p: Plan) => void; onArchive: (p: Plan) => void; isActive?: boolean }) {
   const savings = plan.monthlyPrice > 0
     ? Math.round((1 - plan.yearlyPrice / (plan.monthlyPrice * 12)) * 100)
     : 0
@@ -88,11 +87,11 @@ function PlanCard({ plan, onEdit, onArchive }: { plan: Plan; onEdit: (p: Plan) =
   return (
     <div
       className={`relative bg-white rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
-        plan.popular ? 'border-[#8B5CF6] shadow-md' : 'border-gray-100 hover:border-gray-200'
+        isActive ? 'border-[#8B5CF6] shadow-md' : 'border-gray-100 hover:border-gray-200'
       }`}
     >
       {/* Popular badge */}
-      {plan.popular && (
+      {plan.popular && isActive && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white"
           style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' }}
         >
@@ -391,10 +390,24 @@ export default function PlansPage() {
   const addPlan = useSuperAdminStore(s => s.addPlan)
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
+  const [activeIndex, setActiveIndex] = useState(0)
 
   const activePlans = plans.filter(p => p.status === 'active')
+  const visiblePlans = plans.filter(p => p.status !== 'archived')
+
+  useEffect(() => {
+    const idx = visiblePlans.findIndex(p => p.popular)
+    if (idx >= 0) setActiveIndex(idx)
+  }, [])
+
   const mrrFromPlans = activePlans.reduce((sum, p) => sum + p.monthlyPrice * p.activeSubscribers, 0)
   const totalSubscribers = activePlans.reduce((sum, p) => sum + p.activeSubscribers, 0)
+
+  const goTo = (idx: number) => {
+    if (idx < 0) setActiveIndex(visiblePlans.length - 1)
+    else if (idx >= visiblePlans.length) setActiveIndex(0)
+    else setActiveIndex(idx)
+  }
 
   const handleSave = (plan: Plan, data: Partial<Plan>) => {
     updatePlan(plan.id, data)
@@ -490,10 +503,67 @@ export default function PlansPage() {
 
       {/* ── Plan Cards / Table ─────────────────────────── */}
       {viewMode === 'cards' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          {plans.filter(p => p.status !== 'archived').map(plan => (
-            <PlanCard key={plan.id} plan={plan} onEdit={setEditingPlan} onArchive={handleArchive} />
-          ))}
+        <div className="relative">
+          {/* Carousel Container */}
+          <div className="overflow-hidden py-4">
+            <div
+              className="flex items-center justify-center gap-4 transition-transform duration-500 ease-out"
+              style={{ transform: `translateX(calc(50% - ${(activeIndex * 316) + 150}px))` }}
+            >
+              {visiblePlans.map((plan, i) => {
+                const isActive = i === activeIndex
+                const distance = Math.abs(i - activeIndex)
+                const scale = isActive ? 1 : Math.max(0.85, 1 - distance * 0.05)
+                const opacity = isActive ? 1 : Math.max(0.4, 1 - distance * 0.3)
+                const zIndex = isActive ? 10 : 5 - distance
+
+                return (
+                  <div
+                    key={plan.id}
+                    className="shrink-0 transition-all duration-500 ease-out cursor-pointer"
+                    style={{
+                      width: 300,
+                      transform: `scale(${scale})`,
+                      opacity,
+                      zIndex,
+                    }}
+                    onClick={() => setActiveIndex(i)}
+                  >
+                    <PlanCard plan={plan} onEdit={setEditingPlan} onArchive={handleArchive} isActive={isActive} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Navigation Arrows */}
+          <button
+            onClick={() => goTo(activeIndex - 1)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-800 hover:shadow-lg transition-all z-20"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            onClick={() => goTo(activeIndex + 1)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-800 hover:shadow-lg transition-all z-20"
+          >
+            <ChevronRight size={18} />
+          </button>
+
+          {/* Dot Indicators */}
+          <div className="flex items-center justify-center gap-2 mt-2">
+            {visiblePlans.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveIndex(i)}
+                className={`rounded-full transition-all duration-300 ${
+                  i === activeIndex
+                    ? 'w-6 h-2 bg-[#2E86AB]'
+                    : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3">

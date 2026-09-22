@@ -6,7 +6,63 @@ import {
   ChevronsLeft, ChevronsRight, X, LogOut, MessageSquare, Megaphone,
   ChevronDown, List, UserPlus, Bell, Mail,
 } from 'lucide-react'
-import { sidebarSections } from '../../data/superAdminNav'
+import type { SidebarSection } from '../../types/superadmin'
+
+const sidebarSections: SidebarSection[] = [
+  {
+    label: 'TENANTS',
+    items: [
+      { label: 'Tenant List', icon: 'List', path: '/superadmin/tenants' },
+      { label: 'Tenant Analytics', icon: 'BarChart3', path: '/superadmin/tenants/analytics' },
+      { label: 'Tenant Billing', icon: 'CreditCard', path: '/superadmin/tenants/billing' },
+      { label: 'Tenant Onboarding', icon: 'UserPlus', path: '/superadmin/tenants/onboarding' },
+    ],
+  },
+  {
+    label: 'PLATFORM',
+    items: [
+      { label: 'Subscriptions', icon: 'CreditCard', path: '/superadmin/subscriptions' },
+      { label: 'Plans', icon: 'Package', path: '/superadmin/plans' },
+      { label: 'Payments', icon: 'DollarSign', path: '/superadmin/payments' },
+      { label: 'Usage & Billing', icon: 'BarChart3', path: '/superadmin/usage-billing' },
+      { label: 'API Management', icon: 'Code', path: '/superadmin/api-management' },
+    ],
+  },
+  {
+    label: 'OPERATIONS',
+    items: [
+      { label: 'System Health', icon: 'Activity', path: '/superadmin/system-health' },
+      { label: 'Background Jobs', icon: 'Layers', path: '/superadmin/background-jobs' },
+      { label: 'Monitoring', icon: 'Eye', path: '/superadmin/monitoring' },
+      { label: 'Logs', icon: 'FileText', path: '/superadmin/logs' },
+      { label: 'Tickets', icon: 'MessageSquare', path: '/superadmin/tickets' },
+    ],
+  },
+  {
+    label: 'CONFIGURATION',
+    items: [
+      { label: 'Feature Flags', icon: 'Flag', path: '/superadmin/feature-flags' },
+      { label: 'Settings', icon: 'Settings', path: '/superadmin/settings' },
+      { label: 'Integrations', icon: 'Puzzle', path: '/superadmin/integrations' },
+    ],
+  },
+  {
+    label: 'COMMUNICATION',
+    items: [
+      { label: 'Announcements', icon: 'Megaphone', path: '/superadmin/announcements' },
+      { label: 'Notifications', icon: 'Bell', path: '/superadmin/notifications' },
+      { label: 'Message Inbox', icon: 'Mail', path: '/superadmin/inbox' },
+    ],
+  },
+  {
+    label: 'SECURITY',
+    items: [
+      { label: 'Audit Logs', icon: 'Shield', path: '/superadmin/audit-logs' },
+      { label: 'Admins & Roles', icon: 'Users', path: '/superadmin/admins-roles' },
+      { label: 'API Keys', icon: 'Key', path: '/superadmin/api-keys' },
+    ],
+  },
+]
 import { superAdminLogout } from '../../lib/auth-utils'
 import logo1 from '/logo1.png'
 
@@ -65,13 +121,13 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
             collapsed ? 'justify-center px-0 py-3' : 'px-3 py-2.5'
           } ${
             isActive
-              ? 'bg-[#2E86AB]/20 text-[#57B8D9]'
-              : 'text-white/60 hover:text-white hover:bg-white/5'
+              ? 'bg-[#2E86AB]/10 text-[#2E86AB]'
+              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
           }`
         }
       >
         <LayoutDashboard size={18} className="shrink-0" />
-        {!collapsed && <span className="text-[14px] font-medium text-white">Dashboard</span>}
+        {!collapsed && <span className="text-[14px] font-medium text-gray-900">Dashboard</span>}
       </NavLink>
 
       {/* Sections */}
@@ -87,20 +143,20 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
                 onClick={() => toggleSection(section.label)}
                 className={`w-full flex items-center gap-2 px-3 mb-1.5 rounded-lg transition-all duration-150 ${
                   sectionActive
-                    ? 'text-[#57B8D9]'
-                    : 'text-white/40 hover:text-white/60 hover:bg-white/5'
+                    ? 'text-[#2E86AB]'
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 <ChevronDown
                   size={12}
                   className={`shrink-0 transition-transform duration-200 ${sectionOpen ? 'rotate-0' : '-rotate-90'}`}
                 />
-                <span className="text-[12px] font-semibold tracking-[1.5px] uppercase text-white">
+                <span className="text-[12px] font-semibold tracking-[1.5px] uppercase text-gray-900">
                   {section.label}
                 </span>
               </button>
             ) : (
-              <div className="mx-auto mb-1.5 w-5 h-px bg-white/10" />
+              <div className="mx-auto mb-1.5 w-5 h-px bg-gray-200" />
             )}
 
             {/* Section items */}
@@ -120,8 +176,8 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
                       collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'
                     } ${
                       active
-                        ? 'bg-[#2E86AB]/20 text-[#57B8D9]'
-                        : 'text-white/50 hover:text-white hover:bg-white/5'
+                        ? 'bg-[#2E86AB]/10 text-[#2E86AB]'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                     title={collapsed ? item.label : undefined}
                   >
@@ -146,8 +202,8 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
                             onClick={handleClick}
                             className={`flex items-center gap-3 rounded-lg transition-all duration-150 mb-0.5 px-3 py-1.5 ${
                               isChildActiveNow
-                                ? 'bg-[#2E86AB]/20 text-[#57B8D9]'
-                                : 'text-white/40 hover:text-white hover:bg-white/5'
+                                ? 'bg-[#2E86AB]/10 text-[#2E86AB]'
+                                : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'
                             }`}
                           >
                             <ChildIcon size={14} className="shrink-0" />
@@ -171,8 +227,8 @@ function SidebarNav({ collapsed, onMobileClose }: { collapsed: boolean; onMobile
                   collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'
                 } ${
                   active
-                    ? 'bg-[#2E86AB]/20 text-[#57B8D9]'
-                    : 'text-white/50 hover:text-white hover:bg-white/5'
+                    ? 'bg-[#2E86AB]/10 text-[#2E86AB]'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                 }`}
                 title={collapsed ? item.label : undefined}
               >
@@ -217,14 +273,14 @@ export default function SuperAdminSidebar({ collapsed, onToggle, mobileOpen, onM
         }`}
         style={{
           width: 256,
-          background: 'linear-gradient(180deg, #0B1120 0%, #0F1B2D 100%)',
+          background: '#ffffff',
         }}
       >
         {/* Close button */}
         <div className="absolute top-3 right-3 z-10">
           <button
             onClick={onMobileClose}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
             aria-label="Close sidebar"
           >
             <X size={18} />
@@ -232,13 +288,13 @@ export default function SuperAdminSidebar({ collapsed, onToggle, mobileOpen, onM
         </div>
 
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 h-[64px] border-b border-white/8 shrink-0">
+        <div className="flex items-center gap-3 px-5 h-[64px] border-b border-gray-200 shrink-0">
           <img src={logo1} alt="ServeIQ" className="w-9 h-9 object-contain shrink-0" />
           <div className="flex flex-col min-w-0">
-            <span className="text-[15px] font-bold text-white tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
-              Serve<span style={{ color: '#57B8D9' }}>IQ</span>
+            <span className="text-[15px] font-bold text-gray-900 tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
+              Serve<span style={{ color: '#2E86AB' }}>IQ</span>
             </span>
-            <span className="text-[10px] text-white/40 font-medium tracking-wider uppercase">Admin Portal</span>
+            <span className="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Admin Portal</span>
           </div>
         </div>
 
@@ -251,25 +307,25 @@ export default function SuperAdminSidebar({ collapsed, onToggle, mobileOpen, onM
         className="fixed left-0 top-0 bottom-0 z-30 flex-col transition-all duration-300 hidden lg:flex"
         style={{
           width: collapsed ? 72 : 256,
-          background: 'linear-gradient(180deg, #0B1120 0%, #0F1B2D 100%)',
+          background: '#ffffff',
         }}
       >
         {/* Logo + Collapse */}
-        <div className="flex items-center justify-between px-5 h-[64px] border-b border-white/8 shrink-0">
+        <div className="flex items-center justify-between px-5 h-[64px] border-b border-gray-200 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <img src={logo1} alt="ServeIQ" className="w-9 h-9 object-contain shrink-0" />
             {!collapsed && (
               <div className="flex flex-col min-w-0">
-                <span className="text-[15px] font-bold text-white tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
-                  Serve<span style={{ color: '#57B8D9' }}>IQ</span>
+                <span className="text-[15px] font-bold text-gray-900 tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
+                  Serve<span style={{ color: '#2E86AB' }}>IQ</span>
                 </span>
-                <span className="text-[10px] text-white/40 font-medium tracking-wider uppercase">Admin Portal</span>
+                <span className="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Admin Portal</span>
               </div>
             )}
           </div>
           <button
             onClick={onToggle}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors shrink-0"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
@@ -280,10 +336,10 @@ export default function SuperAdminSidebar({ collapsed, onToggle, mobileOpen, onM
         <SidebarNav collapsed={collapsed} />
 
         {/* Logout */}
-        <div className="border-t border-white/8 px-3 py-3 shrink-0">
+        <div className="border-t border-gray-200 px-3 py-3 shrink-0">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-red-400 hover:text-red-300 hover:bg-white/5 transition-all duration-150"
+            className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-red-500 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
           >
             <LogOut size={16} />
             {!collapsed && <span className="text-[12.5px] font-medium">Logout</span>}

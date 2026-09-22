@@ -6,18 +6,16 @@ import {
 } from 'lucide-react'
 import type { ServiceStatus, IncidentItem, ResourceMetric, DependencyCheck, ServerNode } from '../../types/superadmin'
 
-import {
-  mockSystemHealthSnapshot as systemHealth,
-  mockServicesStatus as servicesStatus,
-  mockIncidents as incidentData,
-  mockCpuMetrics as cpuMetrics,
-  mockMemoryMetrics as memoryMetrics,
-  mockDiskIOMetrics as diskIOMetrics,
-  mockNetworkMetrics as networkMetrics,
-  mockDependencyChecks as dependencyChecks,
-  mockServerNodes as serverNodes,
-  mockHourlyLabels as hourlyLabels,
-} from '../../data/superAdminMockData'
+const systemHealth = { serverUptime: 0, serverUptimeChange: 0, errorRate: 0, errorRateChange: 0, averageResponseTime: 0, p99ResponseTime: 0, activeConnections: 0, requestRate: 0, queueDepth: 0, queueDepthChange: 0, cacheHitRatio: 0, networkInbound: 0, networkOutbound: 0, networkUnit: 'Mbps' }
+const servicesStatus: ServiceStatus[] = []
+const incidentData: IncidentItem[] = []
+const cpuMetrics: ResourceMetric = { label: 'CPU', current: 0, average: 0, max: 100, unit: '%', data: [] }
+const memoryMetrics: ResourceMetric = { label: 'Memory', current: 0, average: 0, max: 100, unit: '%', data: [] }
+const diskIOMetrics: ResourceMetric = { label: 'Disk I/O', current: 0, average: 0, max: 100, unit: '%', data: [] }
+const networkMetrics: ResourceMetric = { label: 'Network', current: 0, average: 0, max: 100, unit: 'Mbps', data: [] }
+const dependencyChecks: DependencyCheck[] = []
+const serverNodes: ServerNode[] = []
+const hourlyLabels: string[] = []
 import { PageTransition } from '../../components/superadmin/Animations'
 
 // ═══════════════════════════════════════════════════════════════

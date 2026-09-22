@@ -4,7 +4,9 @@ import {
   Grid2X2, Rows3, ChevronDown, ExternalLink,
 } from 'lucide-react'
 import { useSuperAdminStore } from '../../../components/superadmin/superAdminStore'
-import { mockOnboardingActivities } from '../../../data/superAdminMockData'
+import type { OnboardingActivity } from '../../../types/superadmin'
+
+const mockOnboardingActivities: OnboardingActivity[] = []
 
 const steps = [
   { key: 'created', label: 'Account Created', description: 'Tenant account created' },

@@ -9,7 +9,6 @@ import { useSuperAdminStore } from './superAdminStore'
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/superadmin':                { title: 'Dashboard', subtitle: 'Welcome back, SuperAdmin' },
-  '/superadmin/profile':        { title: 'Profile', subtitle: '' },
   '/superadmin/system-health':  { title: 'System Health', subtitle: 'Monitor platform services, incidents, and server performance' },
   '/superadmin/plans':          { title: 'Plans', subtitle: 'Manage subscription plans, pricing tiers, and feature sets' },
   '/superadmin/subscriptions':  { title: 'Subscriptions', subtitle: 'View and manage tenant subscriptions' },

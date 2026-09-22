@@ -1,5 +1,3 @@
-// SuperAdmin Types - Extracted from superAdminMockData.ts
-
 export interface SuperAdminTenant {
   id: string
   name: string
@@ -13,6 +11,7 @@ export interface SuperAdminTenant {
   ownerEmail?: string
   ownerPhone?: string
   monthlyRevenue: number
+  mrrChange?: number
   logo: string | null
   city?: string
   country?: string
@@ -665,6 +664,7 @@ export interface TenantExtended {
   totalRooms: number
   totalBookings: number
   monthlyRevenue: number
+  mrrChange?: number
   rating: number
   logo: string | null
   address: string

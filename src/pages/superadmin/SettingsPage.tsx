@@ -13,8 +13,7 @@ import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition } from '../../components/superadmin/Animations'
 import type { PlatformSettings, SettingsChangeLog } from '../../types/superadmin'
 
-import { mockSettingsChangeLogs } from '../../data/superAdminMockData'
-const settingsChangeLogs: SettingsChangeLog[] = mockSettingsChangeLogs
+const settingsChangeLogs: SettingsChangeLog[] = []
 
 // ═══════════════════════════════════════════════════════════════
 // Tab Configuration

@@ -14,8 +14,6 @@ export interface MockLoginResult {
   success: boolean
   token?: string
   refreshToken?: string
-  forcePasswordChange?: boolean
-  isProfileComplete?: boolean
   error?: string
 }
 
@@ -55,6 +53,7 @@ export async function mockSuperAdminLogin(
   const normalizedEmail = email.trim().toLowerCase()
   const normalizedPassword = password.trim()
 
+  // Try saved credentials first
   const saved = getSavedCredentials()
   if (saved) {
     if (normalizedEmail === saved.email.toLowerCase() && normalizedPassword === saved.password) {
@@ -62,23 +61,18 @@ export async function mockSuperAdminLogin(
         success: true,
         token: generateToken(),
         refreshToken: generateToken(),
-        forcePasswordChange: false,
-        isProfileComplete: true,
       }
-    }
-    return {
-      success: false,
-      error: 'Invalid email or password.',
     }
   }
 
+  // Fall back to hardcoded mock credentials
   if (normalizedEmail === MOCK_CREDENTIALS.email && normalizedPassword === MOCK_CREDENTIALS.password) {
+    // Clear stale saved credentials so they don't block future logins
+    clearSavedCredentials()
     return {
       success: true,
       token: generateToken(),
       refreshToken: generateToken(),
-      forcePasswordChange: true,
-      isProfileComplete: false,
     }
   }
 

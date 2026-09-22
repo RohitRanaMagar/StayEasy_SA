@@ -11,11 +11,10 @@ import { PageTransition } from '../../components/superadmin/Animations'
 import { formatNumber } from '../../lib/format'
 import type { JobQueue, JobEntry, ScheduledTask, WorkerPool } from '../../types/superadmin'
 
-import { mockJobQueues, mockJobEntries, mockScheduledTasks, mockWorkerPools } from '../../data/superAdminMockData'
-const jobQueues: JobQueue[] = mockJobQueues
-const jobEntries: JobEntry[] = mockJobEntries
-const scheduledTasks: ScheduledTask[] = mockScheduledTasks
-const workerPools: WorkerPool[] = mockWorkerPools
+const jobQueues: JobQueue[] = []
+const jobEntries: JobEntry[] = []
+const scheduledTasks: ScheduledTask[] = []
+const workerPools: WorkerPool[] = []
 
 // ═══════════════════════════════════════════════════════════════
 // Utility

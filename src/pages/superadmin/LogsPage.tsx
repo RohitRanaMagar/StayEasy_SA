@@ -9,8 +9,7 @@ import { useAction } from '../../components/superadmin/useAction'
 import { PageTransition } from '../../components/superadmin/Animations'
 import type { SystemLogEntry } from '../../types/superadmin'
 
-import { mockSystemLogs } from '../../data/superAdminMockData'
-const systemLogs: SystemLogEntry[] = mockSystemLogs
+const systemLogs: SystemLogEntry[] = []
 
 // ═══════════════════════════════════════════════════════════════
 // Utility

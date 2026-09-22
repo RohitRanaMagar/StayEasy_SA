@@ -11,15 +11,8 @@ import type {
   SuperAdminProfile, PlatformSetupConfig,
   SupportTicket, TicketMessage, Announcement,
   TenantExtended,
+  TenantUsage, UsageMonthlyBreakdown, OverageCharge,
 } from '../../types/superadmin'
-import {
-  mockTenants, mockPlans, mockSubscriptions,
-  mockBillingInvoices, mockPlanChangeLogs,
-  mockFeatureFlags, mockTenantOverrides, mockBrandingConfigs,
-  mockTransactions, mockRefunds, mockPayoutSummary,
-  mockAdminUsers, mockAdminRoles, mockApiKeys, mockAuditLogs,
-  mockTickets, mockAnnouncements, mockSettings,
-} from '../../data/superAdminMockData'
 import { mockSuperAdminLogin, saveCredentials } from '../../lib/superadmin-mock-auth'
 
 // ─── Helper: generate unique IDs ──────────────────────────
@@ -98,7 +91,6 @@ interface SuperAdminStore {
 
   // Profile
   profile: SuperAdminProfile
-  isProfileComplete: boolean
   platformConfig: PlatformSetupConfig
 
   // Impersonation
@@ -115,6 +107,11 @@ interface SuperAdminStore {
 
   // Announcements (SA-008)
   announcements: Announcement[]
+
+  // Usage & Billing
+  tenantUsageData: TenantUsage[]
+  usageMonthlyBreakdown: UsageMonthlyBreakdown[]
+  overageCharges: OverageCharge[]
 
   // System health (mostly static)
   systemHealth: { uptime: string; status: string; cpuUsage: number; memoryUsage: number; diskUsage: number; activeConnections: number; requestsPerSecond: number; avgResponseTime: number; errorRate: number; throughput: number; serverUptime: number; serverUptimeChange: number; errorRateChange: number; queueDepth: number; queueDepthChange: number; cacheHitRatio: number; cacheHitRatioChange: number } | null
@@ -135,7 +132,7 @@ interface SuperAdminStore {
   // ─── Actions ────────────────────────────────────────────
 
   // Auth (Backend API)
-  login: (email: string, password: string, rememberme?: boolean) => Promise<{ forcePasswordChange: boolean; isProfileComplete: boolean }>
+  login: (email: string, password: string, rememberme?: boolean) => Promise<void>
   logout: () => void
   fetchProfile: () => Promise<void>
 
@@ -221,7 +218,6 @@ interface SuperAdminStore {
   submitNidVerification: (documentUrl: string) => void
   submitNationalityCardVerification: (documentUrl: string) => void
   changePassword: (newPassword: string) => void
-  setProfileComplete: (value: boolean) => void
   setPlatformConfig: (data: Partial<PlatformSetupConfig>) => void
 
   // Recalculate
@@ -297,24 +293,42 @@ const defaultSettings: PlatformSettings = {
 // Store
 // ═══════════════════════════════════════════════════════════
 export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
-  // ─── Initial Data (seeded from src/data/superAdminMockData) ──
-  tenants: mockTenants,
-  plans: mockPlans,
-  subscriptions: mockSubscriptions,
-  billingInvoices: mockBillingInvoices,
-  planChangeLogs: mockPlanChangeLogs,
-  featureFlags: mockFeatureFlags,
-  tenantOverrides: mockTenantOverrides,
-  brandingConfigs: mockBrandingConfigs,
+  // ─── Initial Data ──
+  tenants: [],
+  plans: [],
+  subscriptions: [],
+  billingInvoices: [],
+  planChangeLogs: [],
+  featureFlags: [],
+  tenantOverrides: [],
+  brandingConfigs: [],
   featureFlagActivities: [],
-  settings: mockSettings,
-  transactions: mockTransactions,
-  refunds: mockRefunds,
-  payoutSummary: mockPayoutSummary,
-  adminUsers: mockAdminUsers,
-  adminRoles: mockAdminRoles,
-  apiKeys: mockApiKeys,
-  auditLogs: mockAuditLogs,
+  settings: {
+    platformName: '', platformUrl: '', supportEmail: '', supportPhone: '',
+    timezone: '', dateFormat: '', timeFormat: '', defaultLanguage: '',
+    maintenanceMode: false, maintenanceMessage: '',
+    smtpHost: '', smtpPort: 0, smtpUsername: '', smtpPassword: '', smtpEncryption: 'none' as const,
+    fromEmail: '', fromName: '', sendTestEmailTo: '', maxEmailsPerHour: 0,
+    passwordMinLength: 0, passwordRequireSpecialChars: false, maxLoginAttempts: 0,
+    loginLockoutDuration: 0, sessionTimeout: 0, requireEmailVerification: false,
+    allowedIpAddresses: '', adminEmailNotifications: false, adminSlackWebhook: '',
+    bookingAlertThreshold: 0, dailyDigestEnabled: false, dailyDigestTime: '',
+    supportedLanguages: [], supportedCurrencies: [], defaultCurrency: '',
+    bookingDateFormat: '', enableMultiCurrency: false, maxFileUploadSize: 0,
+    allowedFileTypes: '', apiRateLimit: 0, maxWebhookRetries: 0,
+    logRetentionDays: 0, backupRetentionDays: 0, autoBackupEnabled: false,
+    autoBackupFrequency: 'daily' as const, defaultTenantPlan: '', trialPeriodDays: 0,
+    maxPropertiesFreeTier: 0, enableAutoProvision: false, tenantQuotaWarningPercent: 0,
+    featureFlags: { multiLanguage: false, channelManager: false, advancedAnalytics: false, restaurantModule: false, customDomains: false },
+    paymentGateways: { stripe: false, razorpay: false, wire: false },
+  },
+  transactions: [],
+  refunds: [],
+  payoutSummary: { totalRevenue: 0, totalFees: 0, totalRefunds: 0, netRevenue: 0, pendingPayout: 0, lastPayoutAmount: 0, lastPayoutDate: '', pendingTransactions: 0 },
+  adminUsers: [],
+  adminRoles: [],
+  apiKeys: [],
+  auditLogs: [],
   profile: {
     fullName: 'SuperAdmin',
     email: 'admin@ServeIQ.com',
@@ -333,7 +347,7 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
       { id: 'act5', type: 'action', description: 'Updated platform security settings', timestamp: '2025-01-11 10:20 AM', ip: '192.168.1.100' },
     ],
   },
-  isProfileComplete: localStorage.getItem('isProfileComplete') === 'true',
+
   impersonation: {
     active: false,
     tenantId: null,
@@ -341,8 +355,11 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
     token: null,
     startedAt: null,
   },
-  tickets: mockTickets,
-  announcements: mockAnnouncements,
+  tickets: [],
+  announcements: [],
+  tenantUsageData: [],
+  usageMonthlyBreakdown: [],
+  overageCharges: [],
   platformConfig: {
     platformName: '',
     platformUrl: '',
@@ -408,9 +425,9 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
   serverNodes: [],
   hourlyLabels: [],
 
-  // ─── Derived (computed from seeded data) ───────────────
-  dashboardStats: calcDashboardStats(mockTenants, mockSubscriptions),
-  revenueData: calcRevenueData(mockSubscriptions),
+  // ─── Derived ───────────────
+  dashboardStats: calcDashboardStats([], []),
+  revenueData: calcRevenueData([]),
 
   // ─── Auth Actions (Mock) ─────────────────────────────
   login: async (email, password, rememberMe = true) => {
@@ -427,18 +444,11 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
     storage.setItem('userType', 'superadmin')
 
     set({
-      isProfileComplete: result.isProfileComplete ?? false,
       profile: {
         ...get().profile,
         email: email,
       },
     })
-
-    return {
-      forcePasswordChange: result.forcePasswordChange ?? false,
-      isProfileComplete: result.isProfileComplete ?? false,
-      isSeeded: false,
-    }
   },
 
   logout: () => {
@@ -448,10 +458,8 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
     storage.removeItem('superAdminToken')
     storage.removeItem('tempToken')
     storage.removeItem('userType')
-    storage.removeItem('isProfileComplete')
     })
     set({
-      isProfileComplete: false,
       impersonation: { active: false, tenantId: null, tenantName: null, token: null, startedAt: null },
     })
   },
@@ -665,12 +673,6 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
       details: 'SuperAdmin changed their password',
       category: 'security', severity: 'info', ipAddress: '192.168.1.100',
     })
-  },
-
-  setProfileComplete: (value) => {
-    if (value) localStorage.setItem('isProfileComplete', 'true')
-    else localStorage.removeItem('isProfileComplete')
-    set({ isProfileComplete: value })
   },
 
   setPlatformConfig: (data) => set(s => ({ platformConfig: { ...s.platformConfig, ...data } })),

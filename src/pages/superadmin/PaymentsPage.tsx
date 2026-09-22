@@ -1,393 +1,333 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
-  DollarSign, CreditCard, TrendingUp, Search,
-  ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
-  CheckCircle, XCircle, Clock, RefreshCw, Download,
-  Ban, FileText, Mail, MoreHorizontal, Percent,
+  DollarSign, TrendingUp, Clock, RotateCcw,
+  Search, Filter, Download, ChevronDown,
+  CreditCard, Banknote, ArrowUpRight, ArrowDownRight,
+  CheckCircle, XCircle, AlertTriangle, ExternalLink,
 } from 'lucide-react'
-import { useToast } from '../../components/superadmin/Toast'
-import AdvancedButton, { ConfirmDialog } from '../../components/superadmin/AdvancedButton'
-import { useAction } from '../../components/superadmin/useAction'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
+import { useToast } from '../../components/superadmin/Toast'
 import { PageTransition } from '../../components/superadmin/Animations'
+
 import type { PaymentTransaction, PaymentRefund, MonthlyRevenueBreakdown } from '../../types/superadmin'
 
-import { mockMonthlyRevenueBreakdown } from '../../data/superAdminMockData'
-const monthlyRevenueBreakdown: MonthlyRevenueBreakdown[] = mockMonthlyRevenueBreakdown
-const gatewayBreakdown: Record<string, { label: string; total: number; count: number; fee: number }> = {
-  stripe: { label: 'Stripe', total: 28490, count: 9, fee: 842.12 },
-  razorpay: { label: 'Razorpay', total: 9860, count: 4, fee: 268.4 },
-  wire: { label: 'Wire Transfer', total: 9900, count: 3, fee: 287.6 },
+const mockMonthlyRevenueBreakdown: MonthlyRevenueBreakdown[] = []
+
+// ═══════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════
+
+const fmt = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+const statusStyles: Record<string, { bg: string; text: string; icon: typeof CheckCircle }> = {
+  succeeded: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: CheckCircle },
+  pending:   { bg: 'bg-amber-50',  text: 'text-amber-700',  icon: Clock },
+  failed:    { bg: 'bg-red-50',    text: 'text-red-700',     icon: XCircle },
+  refunded:  { bg: 'bg-purple-50', text: 'text-purple-700',  icon: RotateCcw },
+  completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: CheckCircle },
+}
+
+const gatewayIcons: Record<string, string> = {
+  stripe: 'Stripe',
+  razorpay: 'Razorpay',
+  wire: 'Wire',
+  other: 'Other',
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Utility
+// Summary Card
 // ═══════════════════════════════════════════════════════════════
 
-function formatCurrency(amount: number, currency = 'USD'): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
-}
-
-const txnStatusColors: Record<string, { text: string; bg: string; icon: typeof CheckCircle }> = {
-  succeeded: { text: 'text-emerald-700', bg: 'bg-emerald-100', icon: CheckCircle },
-  failed:    { text: 'text-red-700', bg: 'bg-red-100', icon: XCircle },
-  pending:   { text: 'text-yellow-700', bg: 'bg-yellow-100', icon: Clock },
-  refunded:  { text: 'text-blue-700', bg: 'bg-blue-100', icon: RefreshCw },
-}
-
-const refStatusColors: Record<string, string> = {
-  completed: 'text-emerald-600 bg-emerald-100',
-  pending:   'text-yellow-600 bg-yellow-100',
-  failed:    'text-red-600 bg-red-100',
-}
-
-const gatewayColors: Record<string, string> = {
-  stripe:   '#8B5CF6',
-  razorpay: '#2E86AB',
-  wire:     '#10B981',
-  other:    '#6B7280',
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Stat Card
-// ═══════════════════════════════════════════════════════════════
-
-function StatCard({ icon: Icon, label, value, sub, color = '#2E86AB', trend }: {
-  icon: typeof DollarSign; label: string; value: string; sub?: string; color?: string; trend?: { value: string; up: boolean }
+function SummaryCard({ label, value, change, changeLabel, icon: Icon, color }: {
+  label: string; value: string; change?: number; changeLabel?: string
+  icon: typeof DollarSign; color: string
 }) {
+  const isPositive = (change ?? 0) >= 0
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition-all duration-200 hover:border-gray-200">
-      <div className="flex items-start justify-between mb-2">
-        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">{label}</span>
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${color}12` }}>
-          <Icon size={16} style={{ color }} />
+    <div className="bg-white rounded-xl border border-gray-100 p-5">
+      <div className="flex items-start justify-between mb-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
+          <Icon size={18} />
         </div>
+        {change !== undefined && (
+          <span className={`flex items-center gap-0.5 text-[11px] font-semibold ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
+            {isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+            {Math.abs(change)}%
+          </span>
+        )}
       </div>
-      <div className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>{value}</div>
-      {sub && <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>}
-      {trend && (
-        <div className={`flex items-center gap-1 mt-2 text-[11px] font-medium ${trend.up ? 'text-emerald-600' : 'text-red-500'}`}>
-          {trend.up ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-          {trend.value}
-        </div>
-      )}
+      <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">{label}</p>
+      <p className="text-xl font-bold text-gray-900 mt-0.5">{value}</p>
+      {changeLabel && <p className="text-[11px] text-gray-400 mt-1">{changeLabel}</p>}
     </div>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Revenue Chart (SVG)
+// Transactions Tab
 // ═══════════════════════════════════════════════════════════════
 
-function RevenueChart({ data }: { data: MonthlyRevenueBreakdown[] }) {
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center" style={{ height: 140 }}>
-        <span className="text-[11px] text-gray-400">No revenue data</span>
-      </div>
-    )
-  }
-  const maxNet = Math.max(...data.map(d => d.net))
-  const minNet = Math.min(...data.map(d => d.net))
-  const range = maxNet - minNet || 1
-  const w = 700, h = 200, pad = { t: 20, r: 16, b: 34, l: 50 }
-  const chartW = w - pad.l - pad.r
-  const chartH = h - pad.t - pad.b
-
-  const points = data.map((d, i) => ({
-    x: pad.l + (i / (data.length - 1)) * chartW,
-    y: pad.t + (1 - (d.net - minNet) / range) * chartH,
-  }))
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-  const areaPath = linePath + ` L ${points[points.length - 1].x} ${h - pad.b} L ${points[0].x} ${h - pad.b} Z`
-
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: 140 }}>
-      <defs>
-        <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2E86AB" stopOpacity={0.2} />
-          <stop offset="100%" stopColor="#2E86AB" stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      {/* Grid */}
-      {[0, 0.25, 0.5, 0.75, 1].map(f => {
-        const y = pad.t + f * chartH
-        const val = maxNet - f * range
-        return (
-          <g key={f}>
-            <line x1={pad.l} y1={y} x2={w - pad.r} y2={y} stroke="#f0f0f0" strokeDasharray="4 4" />
-            <text x={pad.l - 8} y={y + 4} textAnchor="end" className="fill-gray-400" fontSize={10}>
-              ${(val / 1000).toFixed(1)}K
-            </text>
-          </g>
-        )
-      })}
-      {/* Area + Line */}
-      <path d={areaPath} fill="url(#revGrad)" />
-      <path d={linePath} fill="none" stroke="#2E86AB" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-      {/* Dots */}
-      {points.map((p, i) => (
-        <g key={i}>
-          <circle cx={p.x} cy={p.y} r={4} fill="#2E86AB" stroke="white" strokeWidth={2} />
-          <text x={p.x} y={p.y - 12} textAnchor="middle" className="fill-gray-500" fontSize={9} fontWeight={600}>
-            ${(data[i].net / 1000).toFixed(1)}K
-          </text>
-        </g>
-      ))}
-      {/* X labels */}
-      {data.map((d, i) => (
-        <text key={i} x={points[i]?.x || 0} y={h - 6} textAnchor="middle" className="fill-gray-400" fontSize={9}>
-          {d.month.split(' ')[0]}
-        </text>
-      ))}
-    </svg>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Transactions Table
-// ═══════════════════════════════════════════════════════════════
-
-function TransactionsTable({ transactions }: { transactions: PaymentTransaction[] }) {
-  const { showToast } = useToast()
+function TransactionsTab({ transactions }: { transactions: PaymentTransaction[] }) {
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [page, setPage] = useState(1)
-  const perPage = 8
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [gatewayFilter, setGatewayFilter] = useState<string>('all')
 
-  const filtered = transactions.filter(tx => {
-    const matchesSearch = tx.tenantName.toLowerCase().includes(search.toLowerCase()) ||
-      tx.id.toLowerCase().includes(search.toLowerCase()) ||
-      tx.description.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || tx.status === statusFilter
-    return matchesSearch && matchesStatus
+  const filtered = transactions.filter(t => {
+    const matchSearch = !search || t.tenantName.toLowerCase().includes(search.toLowerCase()) || t.id.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = statusFilter === 'all' || t.status === statusFilter
+    const matchGateway = gatewayFilter === 'all' || t.gateway === gatewayFilter
+    return matchSearch && matchStatus && matchGateway
   })
 
-  const totalPages = Math.ceil(filtered.length / perPage)
-  const pageTxns = filtered.slice((page - 1) * perPage, page * perPage)
-
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-        <h3 className="text-sm font-semibold text-gray-900">All Transactions</h3>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex items-center flex-1 sm:flex-initial">
-            <Search size={14} className="absolute left-3 text-gray-400" />
-            <input
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1) }}
-              placeholder="Search transactions..."
-              className="pl-9 pr-10 py-2.5 text-[13px] bg-white border-2 border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#2E86AB]/20 focus:border-[#2E86AB] shadow-md w-full sm:w-48"
-            />
-            <button className="absolute right-2 p-1.5 bg-[#2E86AB] text-white rounded-lg hover:bg-[#1a6b8a] transition-colors">
-              <Search size={14} />
-            </button>
-          </div>
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search tenant or transaction ID..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors"
+          />
+        </div>
+        <div className="relative">
           <select
             value={statusFilter}
-            onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-            className="text-[11px] border border-gray-200 rounded-lg px-2 py-1.5 text-gray-500 outline-none"
+            onChange={e => setStatusFilter(e.target.value)}
+            className="appearance-none pl-3 pr-8 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] bg-white cursor-pointer"
           >
             <option value="all">All Status</option>
             <option value="succeeded">Succeeded</option>
-            <option value="failed">Failed</option>
             <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
             <option value="refunded">Refunded</option>
           </select>
-          <button onClick={() => showToast('success', 'Transactions exported')}
-            className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-50">
-            <Download size={13} className="text-gray-400" />
-          </button>
+          <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         </div>
+        <div className="relative">
+          <select
+            value={gatewayFilter}
+            onChange={e => setGatewayFilter(e.target.value)}
+            className="appearance-none pl-3 pr-8 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] bg-white cursor-pointer"
+          >
+            <option value="all">All Gateways</option>
+            <option value="stripe">Stripe</option>
+            <option value="razorpay">Razorpay</option>
+            <option value="wire">Wire</option>
+          </select>
+          <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+        <button className="flex items-center gap-1.5 px-3 py-2 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+          <Download size={13} /> Export
+        </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-[12px]">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Transaction</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Tenant</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Gateway</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Amount</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Fee</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Net</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Status</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Date</th>
-              <th className="text-right py-2.5 px-3 text-gray-400 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pageTxns.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="py-8 text-center text-gray-400 text-[13px]">No transactions found</td>
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Transaction</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Tenant</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Plan</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Amount</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Fee</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Net</th>
+                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Gateway</th>
+                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Date</th>
               </tr>
-            ) : (
-              pageTxns.map(tx => {
-                const sc = txnStatusColors[tx.status]
-                const StatusIcon = sc.icon
+            </thead>
+            <tbody>
+              {filtered.map(t => {
+                const st = statusStyles[t.status] || statusStyles.pending
+                const StIcon = st.icon
                 return (
-                  <tr key={tx.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <td className="py-3 px-3">
-                      <span className="text-[10px] font-mono text-gray-500">{tx.id}</span>
-                      <div className="text-[10px] text-gray-400 mt-0.5 max-w-[140px] truncate" title={tx.description}>
-                        {tx.description}
+                  <tr key={t.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] font-mono text-gray-500">{t.id}</span>
+                        {t.invoiceId && (
+                          <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
+                            <ExternalLink size={9} /> {t.invoiceId}
+                          </span>
+                        )}
                       </div>
                     </td>
-                    <td className="py-3 px-3">
-                      <div className="text-[12px] font-medium text-gray-800">{tx.tenantName}</div>
-                      <div className="text-[9px] text-gray-400">{tx.planName}</div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full" style={{ background: gatewayColors[tx.gateway] || '#6B7280' }} />
-                        <span className="text-[10px] text-gray-500 capitalize">{tx.gateway}</span>
+                    <td className="px-4 py-3">
+                      <div>
+                        <p className="text-[13px] font-medium text-gray-800">{t.tenantName}</p>
+                        <p className="text-[11px] text-gray-400">{t.tenantEmail}</p>
                       </div>
                     </td>
-                    <td className="py-3 px-3 font-semibold text-gray-800">
-                      {tx.amount === 0 ? 'Free' : formatCurrency(tx.amount, tx.currency)}
+                    <td className="px-4 py-3">
+                      <span className="text-[12px] text-gray-600">{t.planName}</span>
                     </td>
-                    <td className="py-3 px-3 text-gray-500">{tx.fee === 0 ? '—' : formatCurrency(tx.fee, tx.currency)}</td>
-                    <td className="py-3 px-3 font-medium text-gray-700">{tx.net === 0 ? '—' : formatCurrency(tx.net, tx.currency)}</td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-1">
-                        <StatusIcon size={11} className={sc.text} />
-                        <span className={`text-[11px] font-medium capitalize ${sc.text}`}>{tx.status}</span>
-                      </div>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-[13px] font-semibold text-gray-900">{fmt(t.amount)}</span>
                     </td>
-                    <td className="py-3 px-3 text-[10px] text-gray-400 whitespace-nowrap">{tx.createdAt}</td>
-                    <td className="py-3 px-3 text-right">
-                      <div className="flex items-center gap-1 justify-end">
-                        <button onClick={() => showToast('info', `View details for ${tx.id}`)}
-                          className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="View details">
-                          <FileText size={12} />
-                        </button>
-                        <button onClick={() => showToast('info', `More actions for ${tx.id}`)}
-                          className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="More">
-                          <MoreHorizontal size={12} />
-                        </button>
-                      </div>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-[12px] text-gray-500">{fmt(t.fee)}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-[13px] font-medium text-gray-800">{fmt(t.net)}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-600">
+                        {t.gateway === 'stripe' && <CreditCard size={10} />}
+                        {t.gateway === 'razorpay' && <Banknote size={10} />}
+                        {gatewayIcons[t.gateway]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${st.bg} ${st.text}`}>
+                        <StIcon size={10} /> {t.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-[12px] text-gray-500">{t.createdAt}</span>
                     </td>
                   </tr>
                 )
-              })
-            )}
+              })}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-12 text-center text-[13px] text-gray-400">No transactions match your filters.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+          <span className="text-[12px] text-gray-400">Showing {filtered.length} of {transactions.length} transactions</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Refunds Tab
+// ═══════════════════════════════════════════════════════════════
+
+function RefundsTab({ refunds }: { refunds: PaymentRefund[] }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Refund ID</th>
+              <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Tenant</th>
+              <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Transaction</th>
+              <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Amount</th>
+              <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Reason</th>
+              <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+              <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {refunds.map(r => {
+              const st = statusStyles[r.status] || statusStyles.pending
+              const StIcon = st.icon
+              return (
+                <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                  <td className="px-4 py-3">
+                    <span className="text-[12px] font-mono text-gray-500">{r.id}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-[13px] font-medium text-gray-800">{r.tenantName}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-[12px] font-mono text-gray-400">{r.transactionId}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-[13px] font-semibold text-red-600">-{fmt(r.amount)}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-[12px] text-gray-600 max-w-xs truncate block">{r.reason}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${st.bg} ${st.text}`}>
+                      <StIcon size={10} /> {r.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-[12px] text-gray-500">{r.createdAt}</span>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
+    </div>
+  )
+}
 
-      {filtered.length > 0 && (
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-          <span className="text-[11px] text-gray-400">
-            Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, filtered.length)} of {filtered.length}
-          </span>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">
-              <ChevronLeft size={14} />
-            </button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const start = Math.max(1, Math.min(page - 2, totalPages - 4))
-              const n = start + i
-              if (n > totalPages) return null
-              return (
-                <button key={n} onClick={() => setPage(n)}
-                  className={`w-7 h-7 rounded text-[11px] font-medium ${n === page ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-                  {n}
-                </button>
-              )
-            })}
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">
-              <ChevronRight size={14} />
-            </button>
-          </div>
+// ═══════════════════════════════════════════════════════════════
+// Revenue Breakdown Tab
+// ═══════════════════════════════════════════════════════════════
+
+function RevenueTab() {
+  const breakdown = mockMonthlyRevenueBreakdown
+  const maxNet = Math.max(...breakdown.map(b => b.net))
+
+  return (
+    <div className="space-y-4">
+      {/* Bar chart */}
+      <div className="bg-white rounded-xl border border-gray-100 p-5">
+        <p className="text-[12px] font-semibold text-gray-700 mb-4">Monthly Net Revenue</p>
+        <div className="flex items-end gap-3 h-40">
+          {breakdown.map((b, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <span className="text-[10px] font-medium text-gray-500">{fmt(b.net)}</span>
+              <div
+                className="w-full rounded-t-md transition-all"
+                style={{
+                  height: `${(b.net / maxNet) * 100}%`,
+                  background: 'linear-gradient(180deg, #2E86AB, #1A3C5E)',
+                  minHeight: 4,
+                }}
+              />
+              <span className="text-[10px] text-gray-400 mt-1">{b.month.split(' ')[0]}</span>
+            </div>
+          ))}
         </div>
-      )}
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Refunds Section
-// ═══════════════════════════════════════════════════════════════
-
-function RefundsSection({ refunds }: { refunds: PaymentRefund[] }) {
-  const navigate = useNavigate()
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">Recent Refunds</h3>
-        <button onClick={() => navigate('/superadmin/payments')} className="text-[11px] font-medium text-[#2E86AB] hover:text-[#1A6B8A] transition-colors">View All →</button>
       </div>
-      <div className="divide-y divide-gray-50">
-        {refunds.map(ref => (
-          <div key={ref.id} className="py-3 first:pt-0 last:pb-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-start gap-2.5">
-                <div className="w-7 h-7 rounded flex items-center justify-center text-[9px] font-bold text-white bg-red-400 shrink-0">
-                  R
-                </div>
-                <div>
-                  <div className="text-[12px] font-medium text-gray-800">{ref.tenantName}</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{ref.reason}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${refStatusColors[ref.status]}`}>
-                      {ref.status}
-                    </span>
-                    <span className="text-[9px] text-gray-400">{ref.createdAt}</span>
-                    {ref.processedAt && <span className="text-[9px] text-gray-300">Processed: {ref.processedAt}</span>}
-                  </div>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="font-semibold text-red-500 text-[13px]">-{formatCurrency(ref.amount, ref.currency)}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
-// ═══════════════════════════════════════════════════════════════
-// Gateway Breakdown
-// ═══════════════════════════════════════════════════════════════
-
-function GatewayBreakdownSection() {
-  const payoutInfo = useSuperAdminStore(s => s.payoutSummary)
-  const gateways = Object.entries(gatewayBreakdown)
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Payment Gateways</h3>
-      <div className="space-y-3">
-        {gateways.map(([key, gw]) => {
-          const color = gatewayColors[key] || '#6B7280'
-          const pct = payoutInfo.totalRevenue > 0 ? (gw.total / payoutInfo.totalRevenue) * 100 : 0
-          return (
-            <div key={key}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-                  <span className="text-[12px] font-medium text-gray-700">{gw.label}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[12px] font-semibold text-gray-800">{formatCurrency(gw.total)}</span>
-                  <span className="text-[10px] text-gray-400 ml-2">({gw.count} txns)</span>
-                </div>
-              </div>
-              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
-              </div>
-              <div className="flex justify-between text-[9px] text-gray-400 mt-0.5">
-                <span>Fees: {formatCurrency(gw.fee)}</span>
-                <span>{pct.toFixed(1)}% of revenue</span>
-              </div>
-            </div>
-          )
-        })}
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Month</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Subscriptions</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">One-time</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Refunds</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Fees</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Net</th>
+              </tr>
+            </thead>
+            <tbody>
+              {breakdown.map((b, i) => (
+                <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                  <td className="px-4 py-3 text-[13px] font-medium text-gray-800">{b.month}</td>
+                  <td className="px-4 py-3 text-right text-[13px] text-gray-700">{fmt(b.subscriptions)}</td>
+                  <td className="px-4 py-3 text-right text-[13px] text-gray-700">{fmt(b.oneTime)}</td>
+                  <td className="px-4 py-3 text-right text-[13px] text-red-500">{b.refunds > 0 ? `-${fmt(b.refunds)}` : '—'}</td>
+                  <td className="px-4 py-3 text-right text-[13px] text-gray-500">{fmt(b.fees)}</td>
+                  <td className="px-4 py-3 text-right text-[13px] font-semibold text-gray-900">{fmt(b.net)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
@@ -397,249 +337,113 @@ function GatewayBreakdownSection() {
 // Main Page
 // ═══════════════════════════════════════════════════════════════
 
+type Tab = 'transactions' | 'refunds' | 'revenue'
+
 export default function PaymentsPage() {
-  const store = useSuperAdminStore()
-  const transactions = useSuperAdminStore(s => s.transactions)
-  const refunds = useSuperAdminStore(s => s.refunds)
-  const payoutInfo = useSuperAdminStore(s => s.payoutSummary)
-  const processRefund = useSuperAdminStore(s => s.processRefund)
+  const { transactions, refunds, payoutSummary } = useSuperAdminStore()
   const { showToast } = useToast()
-  const [activeTab, setActiveTab] = useState<'transactions' | 'refunds'>('transactions')
-  const syncAction = useAction({ duration: 1200 })
-  const exportAction = useAction({ duration: 800 })
+  const [tab, setTab] = useState<Tab>('transactions')
 
-  const succeededCount = transactions.filter(t => t.status === 'succeeded').length
-  const failedCount = transactions.filter(t => t.status === 'failed').length
-  const totalFees = transactions.reduce((s, t) => s + t.fee, 0)
-  const totalRefunded = refunds
-    .filter(r => r.status === 'completed')
-    .reduce((s, r) => s + r.amount, 0)
-
-  const [confirmRefund, setConfirmRefund] = useState<PaymentTransaction | null>(null)
-
-  const handleGenerateInvoice = () => {
-    const sub = store.subscriptions?.[0]
-    if (!sub) {
-      showToast('error', 'No subscriptions available')
-      return
-    }
-    store.generateInvoice(sub.id)
-    showToast('success', `Invoice generated for ${sub.tenantName}`)
-  }
+  const tabs: { key: Tab; label: string; count?: number }[] = [
+    { key: 'transactions', label: 'Transactions', count: transactions.length },
+    { key: 'refunds', label: 'Refunds', count: refunds.length },
+    { key: 'revenue', label: 'Revenue Breakdown' },
+  ]
 
   return (
     <PageTransition>
-    <div className="space-y-3">
-      {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-2 sm:ml-auto">
-          <AdvancedButton
-            variant="outline" size="md"
-            icon={<Download size={13} />}
-            loading={exportAction.loading}
-            success={exportAction.success}
-            error={exportAction.error}
-            onClick={async () => {
-              await exportAction.execute(async () => {
-                await new Promise(r => setTimeout(r, 800))
-                showToast('success', 'Report exported')
-              })
-            }}
-            tooltip="Export payment report as CSV"
-            shortcut="⌘E"
-          >
-            Export Report
-          </AdvancedButton>
-          <AdvancedButton
-            variant="primary" size="md"
-            icon={<RefreshCw size={13} />}
-            loading={syncAction.loading}
-            success={syncAction.success}
-            error={syncAction.error}
-            onClick={async () => {
-              await syncAction.execute(async () => {
-                await new Promise(r => setTimeout(r, 1200))
-                showToast('success', 'Payments synced with gateway')
-              })
-            }}
-            tooltip="Sync transactions with payment gateway"
-            shortcut="⌘S"
-          >
-            Sync
-          </AdvancedButton>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Sora', sans-serif" }}>Payments</h1>
+            <p className="text-[13px] text-gray-400 mt-0.5">Transactions, refunds and revenue overview</p>
+          </div>
         </div>
-      </div>
 
-      {/* ── Key Stats ──────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard icon={DollarSign} label="Total Revenue" value={formatCurrency(payoutInfo.totalRevenue)}
-          sub="Gross revenue before fees" color="#10B981" />
-        <StatCard icon={TrendingUp} label="Net Revenue" value={formatCurrency(payoutInfo.netRevenue)}
-          sub={`${formatCurrency(totalFees)} in fees deducted`} color="#2E86AB" />
-        <StatCard icon={Ban} label="Refunds" value={formatCurrency(payoutInfo.totalRefunds)}
-          sub={`${refunds.filter(r => r.status === 'completed').length} completed`} color="#EF4444" trend={{ value: '↑ 2 new this month', up: false }} />
-        <StatCard icon={Clock} label="Pending Payout" value={formatCurrency(payoutInfo.pendingPayout)}
-          sub={`${payoutInfo.pendingTransactions} pending txns`} color="#F59E0B" />
-        <StatCard icon={Percent} label="Avg. Fee Rate" value={`${((totalFees / payoutInfo.totalRevenue) * 100).toFixed(2)}%`}
-          sub="Gateway + processing fees" color="#8B5CF6" />
-        <StatCard icon={CheckCircle} label="Success Rate" value={`${((succeededCount / (succeededCount + failedCount)) * 100).toFixed(1)}%`}
-          sub={`${succeededCount} succeeded · ${failedCount} failed`} color="#3B82F6" />
-      </div>
-
-      {/* ── Revenue Chart ──────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-900">Revenue Trend — Net MRR</h3>
-          <select className="text-[11px] border border-gray-200 rounded-lg px-2 py-1 text-gray-500 outline-none">
-            <option>Last 6 Months</option>
-            <option>Last 12 Months</option>
-            <option>Year to Date</option>
-          </select>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <SummaryCard
+            label="Total Revenue"
+            value={fmt(payoutSummary.totalRevenue)}
+            change={8.2}
+            changeLabel="vs last month"
+            icon={DollarSign}
+            color="bg-emerald-50 text-emerald-600"
+          />
+          <SummaryCard
+            label="Net Revenue"
+            value={fmt(payoutSummary.netRevenue)}
+            change={6.5}
+            changeLabel="after fees & refunds"
+            icon={TrendingUp}
+            color="bg-blue-50 text-blue-600"
+          />
+          <SummaryCard
+            label="Pending Payout"
+            value={fmt(payoutSummary.pendingPayout)}
+            changeLabel={`${payoutSummary.pendingTransactions} pending transactions`}
+            icon={Clock}
+            color="bg-amber-50 text-amber-600"
+          />
+          <SummaryCard
+            label="Total Refunds"
+            value={fmt(payoutSummary.totalRefunds)}
+            change={-12}
+            changeLabel="vs last month"
+            icon={RotateCcw}
+            color="bg-red-50 text-red-500"
+          />
         </div>
-        <RevenueChart data={monthlyRevenueBreakdown} />
-      </div>
 
-      {/* ── Two-column layout ──────────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-3">
-        {/* Main */}
-        <div className="xl:col-span-3 space-y-3">
-          {/* Tabs */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 w-fit">
+        {/* Payout Info Bar */}
+        <div className="bg-white rounded-xl border border-gray-100 px-5 py-3 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Last Payout</p>
+              <p className="text-[13px] font-semibold text-gray-800">{fmt(payoutSummary.lastPayoutAmount)} <span className="text-gray-400 font-normal">· {payoutSummary.lastPayoutDate}</span></p>
+            </div>
+            <div className="w-px h-8 bg-gray-100" />
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Total Fees</p>
+              <p className="text-[13px] font-semibold text-gray-800">{fmt(payoutSummary.totalFees)}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => showToast('info', 'Payout export coming soon')}
+            className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-medium text-white bg-[#2E86AB] rounded-lg hover:bg-[#1a6b8a] transition-colors"
+          >
+            <Download size={13} /> Export Report
+          </button>
+        </div>
+
+        {/* Tab Bar */}
+        <div className="flex items-center gap-1 border-b border-gray-200">
+          {tabs.map(t => (
             <button
-              onClick={() => setActiveTab('transactions')}
-              className={`px-4 py-1.5 text-[12px] font-medium rounded-md transition-all ${
-                activeTab === 'transactions' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium border-b-2 transition-colors ${
+                tab === t.key
+                  ? 'border-[#2E86AB] text-[#2E86AB]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <CreditCard size={13} className="inline mr-1.5" />
-              Transactions ({transactions.length})
+              {t.label}
+              {t.count !== undefined && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                  tab === t.key ? 'bg-[#2E86AB]/10 text-[#2E86AB]' : 'bg-gray-100 text-gray-500'
+                }`}>{t.count}</span>
+              )}
             </button>
-            <button
-              onClick={() => setActiveTab('refunds')}
-              className={`px-4 py-1.5 text-[12px] font-medium rounded-md transition-all ${
-                activeTab === 'refunds' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              <Ban size={13} className="inline mr-1.5" />
-              Refunds ({refunds.length})
-            </button>
-          </div>
-
-          {activeTab === 'transactions' ? (
-            <TransactionsTable transactions={transactions} />
-          ) : (
-            <RefundsSection refunds={refunds} />
-          )}
+          ))}
         </div>
 
-        {/* Sidebar */}
-        <div className="xl:col-span-1 space-y-4">
-          <GatewayBreakdownSection />
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
-            <div className="space-y-2">
-              <button onClick={handleGenerateInvoice}
-                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-[12px] text-gray-600 hover:bg-gray-50 transition-colors">
-                <FileText size={14} className="text-[#2E86AB]" />
-                Generate Invoice
-              </button>
-              <button onClick={() => {
-                const txn = transactions.find(t => t.status === 'succeeded')
-                if (txn) setConfirmRefund(txn)
-                else showToast('error', 'No successful transaction available for refund')
-              }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-[12px] text-gray-600 hover:bg-gray-50 transition-colors">
-                <Ban size={14} className="text-red-400" />
-                Issue Refund
-              </button>
-              <button onClick={async () => {
-                await new Promise(r => setTimeout(r, 500))
-                showToast('success', 'Report downloaded')
-              }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-[12px] text-gray-600 hover:bg-gray-50 transition-colors">
-                <Download size={14} className="text-[#8B5CF6]" />
-                Download Report
-              </button>
-              <button onClick={() => showToast('success', 'Receipt sent to tenant')}
-                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-[12px] text-gray-600 hover:bg-gray-50 transition-colors">
-                <Mail size={14} className="text-[#F59E0B]" />
-                Send Receipt
-              </button>
-            </div>
-          </div>
-
-          {/* Revenue Share */}
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Revenue Snapshot</h3>
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between text-[12px]">
-                <span className="text-gray-500">Subscriptions</span>
-                <span className="font-semibold text-gray-800">
-                  {formatCurrency(monthlyRevenueBreakdown.reduce((s, m) => s + m.subscriptions, 0))}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[12px]">
-                <span className="text-gray-500">One-time Fees</span>
-                <span className="font-semibold text-gray-800">
-                  {formatCurrency(monthlyRevenueBreakdown.reduce((s, m) => s + m.oneTime, 0))}
-                </span>
-              </div>
-              <div className="border-t border-gray-100 my-1" />
-              <div className="flex items-center justify-between text-[12px]">
-                <span className="text-gray-600 font-medium">Gross Revenue</span>
-                <span className="font-semibold text-gray-900">{formatCurrency(payoutInfo.totalRevenue)}</span>
-              </div>
-              <div className="flex items-center justify-between text-[12px]">
-                <span className="text-gray-500">Fees</span>
-                <span className="text-red-500">-{formatCurrency(totalFees)}</span>
-              </div>
-              <div className="flex items-center justify-between text-[12px]">
-                <span className="text-gray-500">Refunds</span>
-                <span className="text-red-500">-{formatCurrency(totalRefunded)}</span>
-              </div>
-              <div className="border-t border-gray-100 my-1" />
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="font-semibold text-gray-900">Net Revenue</span>
-                <span className="font-bold text-emerald-600">{formatCurrency(payoutInfo.netRevenue)}</span>
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-50 text-[10px] text-gray-400">
-              Last payout: {formatCurrency(payoutInfo.lastPayoutAmount)} on {payoutInfo.lastPayoutDate}
-            </div>
-          </div>
-        </div>
+        {/* Tab Content */}
+        {tab === 'transactions' && <TransactionsTab transactions={transactions} />}
+        {tab === 'refunds' && <RefundsTab refunds={refunds} />}
+        {tab === 'revenue' && <RevenueTab />}
       </div>
-    </div>
-
-      {/* Refund Confirmation */}
-      <ConfirmDialog
-        open={confirmRefund !== null}
-        onClose={() => setConfirmRefund(null)}
-        onConfirm={async () => {
-          if (confirmRefund) {
-            processRefund({
-              transactionId: confirmRefund.id,
-              tenantName: confirmRefund.tenantName,
-              amount: confirmRefund.amount,
-              currency: confirmRefund.currency,
-              reason: 'Customer request',
-              status: 'completed',
-              createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            })
-            showToast('success', `Refund of $${confirmRefund.amount} issued to ${confirmRefund.tenantName}`)
-            store.recalcDashboard()
-          }
-          setConfirmRefund(null)
-        }}
-        title="Issue Refund"
-        message={`Issue a refund to ${confirmRefund?.tenantName} for ${confirmRefund ? formatCurrency(confirmRefund.amount, confirmRefund.currency) : ''}?`}
-        confirmLabel="Issue Refund"
-        variant="danger"
-        icon={<Ban size={18} className="text-red-500" />}
-        details="This action will process the refund immediately. The amount will be returned to the customer's original payment method."
-      />
     </PageTransition>
   )
 }

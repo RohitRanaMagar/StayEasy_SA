@@ -11,8 +11,7 @@ import TenantDetailDrawer from './TenantDetailDrawer'
 import CreateTenantWizard from '../../../components/CreateTenantWizard'
 import EditTenantModal from './EditTenantModal'
 
-import { mockTenantsExtended } from '../../../data/superAdminMockData'
-const tenants: TenantExtended[] = mockTenantsExtended
+const tenants: TenantExtended[] = []
 
 const planBadge: Record<string, string> = {
   Enterprise: 'bg-gradient-to-r from-purple-500/10 to-purple-600/5 text-purple-700 ring-1 ring-purple-500/20',
