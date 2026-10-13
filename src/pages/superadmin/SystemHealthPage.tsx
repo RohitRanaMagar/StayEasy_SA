@@ -5,8 +5,40 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronDown, ChevronRight, ExternalLink,
 } from 'lucide-react'
 import type { ServiceStatus, IncidentItem, ResourceMetric, DependencyCheck, ServerNode } from '../../types/superadmin'
+import { useQuery } from '@tanstack/react-query'
+import { getSystemHealth } from '../../services/superadminApi'
 
-const systemHealth = { serverUptime: 0, serverUptimeChange: 0, errorRate: 0, errorRateChange: 0, averageResponseTime: 0, p99ResponseTime: 0, activeConnections: 0, requestRate: 0, queueDepth: 0, queueDepthChange: 0, cacheHitRatio: 0, networkInbound: 0, networkOutbound: 0, networkUnit: 'Mbps' }
+// ─── Live API mapping ───────────────────────────────────────────
+// GET /superadmin/health declares an empty ({}) response schema, so
+// the payload is an open shape. Map ONLY fields that actually
+// exist; lists with no backend counterpart stay empty and render
+// their empty states below.
+type OpenPayload = Record<string, unknown>
+
+function readField(obj: OpenPayload | null | undefined, keys: string[]): unknown {
+  if (!obj) return undefined
+  for (const k of keys) {
+    const v = obj[k]
+    if (v !== undefined && v !== null) return v
+  }
+  return undefined
+}
+
+function numOrZero(obj: OpenPayload | null | undefined, keys: string[]): number {
+  const v = readField(obj, keys)
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v)
+  return 0
+}
+
+function strOr(obj: OpenPayload | null | undefined, keys: string[], fallback: string): string {
+  const v = readField(obj, keys)
+  if (typeof v === 'string') return v
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+  return fallback
+}
+
+// No backend counterpart in the health payload — render empty states.
 const servicesStatus: ServiceStatus[] = []
 const incidentData: IncidentItem[] = []
 const cpuMetrics: ResourceMetric = { label: 'CPU', current: 0, average: 0, max: 100, unit: '%', data: [] }
@@ -349,34 +381,60 @@ function ServerNodeCard({ node }: { node: ServerNode }) {
 
 export default function SystemHealthPage() {
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
-  const [refreshing, setRefreshing] = useState(false)
   const [autoRefresh, setAutoRefresh] = useState(false)
+  const healthQuery = useQuery({ queryKey: ['sa-health'], queryFn: getSystemHealth })
+  const payload = (healthQuery.data ?? null) as OpenPayload | null
+
+  // Map ONLY fields present in the real response — no invented values.
+  const systemHealth = {
+    serverUptime: numOrZero(payload, ['serverUptime', 'server_uptime', 'uptime']),
+    serverUptimeChange: numOrZero(payload, ['serverUptimeChange', 'server_uptime_change', 'uptime_change']),
+    errorRate: numOrZero(payload, ['errorRate', 'error_rate']),
+    errorRateChange: numOrZero(payload, ['errorRateChange', 'error_rate_change']),
+    averageResponseTime: numOrZero(payload, ['averageResponseTime', 'average_response_time', 'avg_response_time', 'avgResponseTime']),
+    p99ResponseTime: numOrZero(payload, ['p99ResponseTime', 'p99_response_time', 'p99']),
+    activeConnections: numOrZero(payload, ['activeConnections', 'active_connections']),
+    requestRate: numOrZero(payload, ['requestRate', 'request_rate']),
+    queueDepth: numOrZero(payload, ['queueDepth', 'queue_depth']),
+    queueDepthChange: numOrZero(payload, ['queueDepthChange', 'queue_depth_change']),
+    cacheHitRatio: numOrZero(payload, ['cacheHitRatio', 'cache_hit_ratio']),
+    networkInbound: numOrZero(payload, ['networkInbound', 'network_inbound']),
+    networkOutbound: numOrZero(payload, ['networkOutbound', 'network_outbound']),
+    networkUnit: strOr(payload, ['networkUnit', 'network_unit'], 'Mbps'),
+  }
 
   const handleRefresh = () => {
-    setRefreshing(true)
-    setTimeout(() => {
-      setLastRefreshed(new Date())
-      setRefreshing(false)
-    }, 600)
+    void healthQuery.refetch()
   }
 
   useEffect(() => {
+    if (healthQuery.dataUpdatedAt > 0) setLastRefreshed(new Date(healthQuery.dataUpdatedAt))
+  }, [healthQuery.dataUpdatedAt])
+
+  useEffect(() => {
     if (!autoRefresh) return
-    const interval = setInterval(handleRefresh, 30000)
+    const interval = setInterval(() => { void healthQuery.refetch() }, 30000)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefresh])
 
-  const overallStatus = servicesStatus.every(s => s.status === 'operational')
-    ? 'All Systems Operational'
-    : servicesStatus.some(s => s.status === 'down')
-      ? 'Some Systems Down'
-      : 'Degraded Performance'
+  const overallStatus = servicesStatus.length === 0
+    ? 'No service data'
+    : servicesStatus.every(s => s.status === 'operational')
+      ? 'All Systems Operational'
+      : servicesStatus.some(s => s.status === 'down')
+        ? 'Some Systems Down'
+        : 'Degraded Performance'
 
   const overallColor = overallStatus === 'All Systems Operational'
     ? 'text-emerald-600'
     : overallStatus === 'Some Systems Down'
       ? 'text-red-500'
-      : 'text-orange-500'
+      : overallStatus === 'No service data'
+        ? 'text-gray-400'
+        : 'text-orange-500'
+
+  const isFetching = healthQuery.isFetching
 
   return (
     <PageTransition>
@@ -405,11 +463,11 @@ export default function SystemHealthPage() {
           </label>
           <button
             onClick={handleRefresh}
-            disabled={refreshing}
+            disabled={isFetching}
             className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
-            <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} />
+            {isFetching ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
       </div>
@@ -418,6 +476,30 @@ export default function SystemHealthPage() {
       <div className="text-[10px] text-gray-300 -mt-3">
         Last updated: {lastRefreshed.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
       </div>
+
+      {/* ── Query states ─────────────────────────────── */}
+      {healthQuery.isLoading && (
+        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3 animate-pulse">
+          <RefreshCw size={14} className="text-gray-300 animate-spin" />
+          <span className="text-[12px] text-gray-400">Loading system health…</span>
+        </div>
+      )}
+      {healthQuery.isError && (
+        <div className="bg-white rounded-xl border border-red-200 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <span className="text-[12px] text-red-600 font-medium">Failed to load system health. Check your connection and try again.</span>
+          <button
+            onClick={handleRefresh}
+            className="px-3 py-1.5 text-[11px] font-medium text-white bg-[#1a2332] rounded-lg hover:bg-[#243044] transition-colors w-fit shrink-0"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {healthQuery.isSuccess && payload !== null && Object.keys(payload).length === 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <span className="text-[12px] text-gray-400">The health endpoint returned no data.</span>
+        </div>
+      )}
 
       {/* ── Key Metrics ────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -477,9 +559,15 @@ export default function SystemHealthPage() {
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {serverNodes.map(node => (
-            <ServerNodeCard key={node.id} node={node} />
-          ))}
+          {serverNodes.length === 0 ? (
+            <div className="col-span-full bg-white rounded-xl border border-gray-100 p-6 text-center text-[12px] text-gray-400">
+              No server nodes reported
+            </div>
+          ) : (
+            serverNodes.map(node => (
+              <ServerNodeCard key={node.id} node={node} />
+            ))
+          )}
         </div>
       </div>
 
@@ -496,9 +584,15 @@ export default function SystemHealthPage() {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {servicesStatus.map(service => (
-                <ServiceCard key={service.name} service={service} />
-              ))}
+              {servicesStatus.length === 0 ? (
+                <div className="col-span-full py-8 text-center text-[12px] text-gray-400">
+                  No services data
+                </div>
+              ) : (
+                servicesStatus.map(service => (
+                  <ServiceCard key={service.name} service={service} />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -511,9 +605,15 @@ export default function SystemHealthPage() {
               <span className="text-[10px] text-gray-400">{dependencyChecks.filter(d => d.status === 'healthy').length}/{dependencyChecks.length} healthy</span>
             </div>
             <div className="divide-y divide-gray-50">
-              {dependencyChecks.map(dep => (
-                <DependencyRow key={dep.name} dep={dep} />
-              ))}
+              {dependencyChecks.length === 0 ? (
+                <div className="py-8 text-center text-[12px] text-gray-400">
+                  No dependencies reported
+                </div>
+              ) : (
+                dependencyChecks.map(dep => (
+                  <DependencyRow key={dep.name} dep={dep} />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -603,6 +703,11 @@ export default function SystemHealthPage() {
         </div>
 
         {/* Timeline line */}
+        {incidentData.length === 0 ? (
+          <div className="py-8 text-center text-[12px] text-gray-400">
+            No incidents reported
+          </div>
+        ) : (
         <div className="relative">
           {incidentData.map((incident, idx) => (
             <div key={incident.id} className="relative">
@@ -615,6 +720,7 @@ export default function SystemHealthPage() {
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* ── Summary Footer Stats ───────────────────────── */}

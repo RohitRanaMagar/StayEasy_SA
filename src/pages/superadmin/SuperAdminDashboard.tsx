@@ -1,5 +1,6 @@
 import { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   Users, CreditCard, DollarSign, TrendingUp, Activity,
   Search, Ban, UserCog, ChevronLeft, ChevronRight,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { SuperAdminTenant, SuperAdminAuditLog } from '../../types/superadmin'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
+import { getDashboardMetrics } from '../../services/superadminApi'
 import { PageTransition, FadeIn, StaggerList, StaggerItem } from '../../components/superadmin/Animations'
 import { ConfirmDialog } from '../../components/superadmin/AdvancedButton'
 
@@ -19,6 +21,55 @@ import { ConfirmDialog } from '../../components/superadmin/AdvancedButton'
 
 type SortField = 'name' | 'plan' | 'status'
 type SortDir = 'asc' | 'desc'
+
+// ═══════════════════════════════════════════════════════════════
+// Live API mapping helpers — GET /superadmin/dashboard declares an
+// empty ({}) response schema, so the payload is an open shape. Map
+// ONLY fields that actually exist; everything else stays empty.
+// ═══════════════════════════════════════════════════════════════
+
+type OpenPayload = Record<string, unknown>
+
+function readField(obj: OpenPayload | null | undefined, keys: string[]): unknown {
+  if (!obj) return undefined
+  for (const k of keys) {
+    const v = obj[k]
+    if (v !== undefined && v !== null) return v
+  }
+  return undefined
+}
+
+function numOrNull(obj: OpenPayload | null | undefined, keys: string[]): number | null {
+  const v = readField(obj, keys)
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v)
+  return null
+}
+
+interface RevenuePoint { month: string; revenue: number }
+
+const EMPTY_REVENUE_POINTS: RevenuePoint[] = []
+
+function parseRevenuePoints(payload: OpenPayload | null | undefined): RevenuePoint[] | null {
+  const raw = readField(payload, ['revenueData', 'revenue_data', 'revenue_history', 'monthly_revenue', 'revenue', 'mrr_history'])
+  if (!Array.isArray(raw) || raw.length === 0) return null
+  const points: RevenuePoint[] = []
+  for (let i = 0; i < raw.length; i++) {
+    const item = raw[i] as unknown
+    if (typeof item === 'number' && Number.isFinite(item)) {
+      points.push({ month: `M${i + 1}`, revenue: item })
+    } else if (typeof item === 'string' && Number.isFinite(Number(item))) {
+      points.push({ month: `M${i + 1}`, revenue: Number(item) })
+    } else if (item && typeof item === 'object') {
+      const rec = item as OpenPayload
+      const rev = numOrNull(rec, ['revenue', 'mrr', 'value', 'amount'])
+      if (rev === null) continue
+      const m = readField(rec, ['month', 'label', 'period', 'date'])
+      points.push({ month: typeof m === 'string' ? m : `M${i + 1}`, revenue: rev })
+    }
+  }
+  return points.length > 0 ? points : null
+}
 
 // ═══════════════════════════════════════════════════════════════
 // Stat Card with Sparkline
@@ -85,23 +136,22 @@ function EmptyCard({ icon: Icon, message }: { icon: typeof Flag; message: string
 
 const CHART_W = 500, CHART_H = 160, PAD = { t: 16, r: 12, b: 26, l: 42 }
 
-const MiniRevenueChart = memo(() => {
+const MiniRevenueChart = memo(({ data }: { data: RevenuePoint[] | null }) => {
   const [period, setPeriod] = useState<'6M' | '12M' | 'YTD' | 'All'>('6M')
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
-  const revenueData = useSuperAdminStore(s => s.revenueData)
 
-  const data = revenueData
+  const chartData = data ?? EMPTY_REVENUE_POINTS
   const chartW = CHART_W - PAD.l - PAD.r
   const chartH = CHART_H - PAD.t - PAD.b
 
   const { points, pathD, areaD, max, range } = useMemo(() => {
-    if (data.length === 0) return { points: [], pathD: '', areaD: '', max: 0, range: 1 }
-    const max = Math.max(...data.map(d => d.revenue))
-    const min = Math.min(...data.map(d => d.revenue))
+    if (chartData.length === 0) return { points: [], pathD: '', areaD: '', max: 0, range: 1 }
+    const max = Math.max(...chartData.map(d => d.revenue))
+    const min = Math.min(...chartData.map(d => d.revenue))
     const range = max - min || 1
-    const points = data.map((d, i) => ({
-      x: PAD.l + (i / (data.length - 1)) * chartW,
+    const points = chartData.map((d, i) => ({
+      x: PAD.l + (i / (chartData.length - 1)) * chartW,
       y: PAD.t + (1 - (d.revenue - min) / range) * chartH,
       revenue: d.revenue,
       month: d.month,
@@ -109,15 +159,15 @@ const MiniRevenueChart = memo(() => {
     const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
     const areaD = pathD + ` L ${points[points.length - 1].x.toFixed(1)} ${(CHART_H - PAD.b).toFixed(1)} L ${points[0].x.toFixed(1)} ${(CHART_H - PAD.b).toFixed(1)} Z`
     return { points, pathD, areaD, max, range }
-  }, [data, chartW, chartH])
+  }, [chartData, chartW, chartH])
 
-  const totalRevenue = data.length > 0 ? data[data.length - 1].revenue : 0
-  const prevRevenue = data.length > 1 ? data[data.length - 2].revenue : totalRevenue
+  const totalRevenue = chartData.length > 0 ? chartData[chartData.length - 1].revenue : 0
+  const prevRevenue = chartData.length > 1 ? chartData[chartData.length - 2].revenue : totalRevenue
   const changePercent = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue * 100) : 0
 
   const periodLabels = { '6M': 'Last 6 Months', '12M': 'Last 12 Months', 'YTD': 'Year to Date', 'All': 'All Time' }
 
-  if (data.length === 0) {
+  if (chartData.length === 0) {
     return <EmptyCard icon={BarChart3} message="No revenue data" />
   }
 
@@ -159,8 +209,8 @@ const MiniRevenueChart = memo(() => {
 
       {hoveredIndex !== null && (
         <div className="mb-2 flex items-center gap-3 text-[11px] bg-gray-900 text-white rounded-lg px-3 py-1.5 w-fit">
-          <span className="font-medium">{data[hoveredIndex].month}</span>
-          <span className="text-emerald-300 font-bold">${data[hoveredIndex].revenue.toLocaleString()}</span>
+          <span className="font-medium">{chartData[hoveredIndex].month}</span>
+          <span className="text-emerald-300 font-bold">${chartData[hoveredIndex].revenue.toLocaleString()}</span>
         </div>
       )}
 
@@ -207,7 +257,7 @@ const MiniRevenueChart = memo(() => {
               />
               {/* X-axis labels */}
               <text x={p.x} y={CHART_H - 6} textAnchor="middle" className="fill-gray-400" fontSize={10}>
-                {data[i].month.split(' ')[0]}
+                {chartData[i].month.split(' ')[0]}
               </text>
             </g>
           ))}
@@ -809,17 +859,34 @@ function KeyFeatureFlags() {
 // System Health with Badges
 // ═══════════════════════════════════════════════════════════════
 
-function SystemHealthSection() {
-  const navigate = useNavigate()
-  const systemHealth = useSuperAdminStore(s => s.systemHealth)
-  const healthItems = systemHealth ? [
-    { label: 'Server Uptime', value: `${systemHealth.serverUptime}%`, change: `↑ ${systemHealth.serverUptimeChange} pp vs last 7 days`, icon: Server, color: '#10B981', bgColor: '#ECFDF5', threshold: systemHealth.serverUptime, critical: 99.0, warning: 99.5 },
-    { label: 'Error Rate', value: `${systemHealth.errorRate}%`, change: `↓ ${Math.abs(systemHealth.errorRateChange)} pp vs last 7 days`, icon: AlertTriangle, color: '#F59E0B', bgColor: '#FFFBEB', threshold: systemHealth.errorRate, critical: 1.0, warning: 0.5 },
-    { label: 'Queue Depth', value: systemHealth.queueDepth.toString(), change: `↓ ${Math.abs(systemHealth.queueDepthChange)} vs last 7 days`, icon: Database, color: '#3B82F6', bgColor: '#EFF6FF', threshold: systemHealth.queueDepth, critical: 50, warning: 20 },
-    { label: 'Cache Hit Ratio', value: `${systemHealth.cacheHitRatio}%`, change: `↑ ${systemHealth.cacheHitRatioChange} pp vs last 7 days`, icon: Zap, color: '#10B981', bgColor: '#ECFDF5', threshold: systemHealth.cacheHitRatio, critical: 80, warning: 90 },
-  ] : []
+interface DashboardHealthSummary {
+  serverUptime: number | null
+  serverUptimeChange: number | null
+  errorRate: number | null
+  errorRateChange: number | null
+  queueDepth: number | null
+  queueDepthChange: number | null
+  cacheHitRatio: number | null
+  cacheHitRatioChange: number | null
+}
 
-  if (!systemHealth) {
+function SystemHealthSection({ health }: { health: DashboardHealthSummary | null }) {
+  const navigate = useNavigate()
+  const healthItems: { label: string; value: string; change: string; icon: typeof Server; color: string; bgColor: string; threshold: number; critical: number; warning: number }[] = []
+  if (health?.serverUptime !== null && health?.serverUptime !== undefined) {
+    healthItems.push({ label: 'Server Uptime', value: `${health.serverUptime}%`, change: health.serverUptimeChange !== null && health.serverUptimeChange !== undefined ? `↑ ${health.serverUptimeChange} pp vs last 7 days` : 'No change data', icon: Server, color: '#10B981', bgColor: '#ECFDF5', threshold: health.serverUptime, critical: 99.0, warning: 99.5 })
+  }
+  if (health?.errorRate !== null && health?.errorRate !== undefined) {
+    healthItems.push({ label: 'Error Rate', value: `${health.errorRate}%`, change: health.errorRateChange !== null && health.errorRateChange !== undefined ? `↓ ${Math.abs(health.errorRateChange)} pp vs last 7 days` : 'No change data', icon: AlertTriangle, color: '#F59E0B', bgColor: '#FFFBEB', threshold: health.errorRate, critical: 1.0, warning: 0.5 })
+  }
+  if (health?.queueDepth !== null && health?.queueDepth !== undefined) {
+    healthItems.push({ label: 'Queue Depth', value: health.queueDepth.toString(), change: health.queueDepthChange !== null && health.queueDepthChange !== undefined ? `↓ ${Math.abs(health.queueDepthChange)} vs last 7 days` : 'No change data', icon: Database, color: '#3B82F6', bgColor: '#EFF6FF', threshold: health.queueDepth, critical: 50, warning: 20 })
+  }
+  if (health?.cacheHitRatio !== null && health?.cacheHitRatio !== undefined) {
+    healthItems.push({ label: 'Cache Hit Ratio', value: `${health.cacheHitRatio}%`, change: health.cacheHitRatioChange !== null && health.cacheHitRatioChange !== undefined ? `↑ ${health.cacheHitRatioChange} pp vs last 7 days` : 'No change data', icon: Zap, color: '#10B981', bgColor: '#ECFDF5', threshold: health.cacheHitRatio, critical: 80, warning: 90 })
+  }
+
+  if (healthItems.length === 0) {
     return <EmptyCard icon={Server} message="No health data" />
   }
 
@@ -962,7 +1029,38 @@ function AuditLogSection() {
 
 export default function SuperAdminDashboard() {
   const [impersonating, setImpersonating] = useState<string | null>(null)
-  const stats = useSuperAdminStore(s => s.dashboardStats)
+  const dashboardQuery = useQuery({ queryKey: ['sa-dashboard'], queryFn: getDashboardMetrics })
+  const metrics = (dashboardQuery.data ?? null) as OpenPayload | null
+
+  // Map ONLY fields present in the real response — no faked values.
+  const totalTenants = numOrNull(metrics, ['totalTenants', 'total_tenants', 'tenants_count', 'tenants'])
+  const totalTenantsChange = numOrNull(metrics, ['totalTenantsChange', 'total_tenants_change', 'tenants_change'])
+  const activeSubscriptions = numOrNull(metrics, ['activeSubscriptions', 'active_subscriptions', 'subscriptions_count', 'subscriptions'])
+  const activeSubscriptionsChange = numOrNull(metrics, ['activeSubscriptionsChange', 'active_subscriptions_change', 'subscriptions_change'])
+  const mrr = numOrNull(metrics, ['mrr', 'monthly_recurring_revenue', 'monthlyRevenue', 'monthly_revenue'])
+  const mrrChangePercent = numOrNull(metrics, ['mrrChangePercent', 'mrr_change_percent', 'mrr_change', 'revenue_change_percent'])
+  const churnRate = numOrNull(metrics, ['churnRate', 'churn_rate', 'churn'])
+  const churnRateChange = numOrNull(metrics, ['churnRateChange', 'churn_rate_change', 'churn_change'])
+  const apiCallsToday = numOrNull(metrics, ['apiCallsToday', 'api_calls_today', 'api_calls', 'requests_today'])
+  const apiCallsChangePercent = numOrNull(metrics, ['apiCallsChangePercent', 'api_calls_change_percent', 'api_calls_change'])
+  const revenuePoints = useMemo(() => parseRevenuePoints(metrics), [metrics])
+
+  // Health subset possibly embedded in the dashboard payload (left empty when absent).
+  const serverUptime = numOrNull(metrics, ['serverUptime', 'server_uptime', 'uptime'])
+  const serverUptimeChange = numOrNull(metrics, ['serverUptimeChange', 'server_uptime_change', 'uptime_change'])
+  const errorRate = numOrNull(metrics, ['errorRate', 'error_rate'])
+  const errorRateChange = numOrNull(metrics, ['errorRateChange', 'error_rate_change'])
+  const queueDepth = numOrNull(metrics, ['queueDepth', 'queue_depth'])
+  const queueDepthChange = numOrNull(metrics, ['queueDepthChange', 'queue_depth_change'])
+  const cacheHitRatio = numOrNull(metrics, ['cacheHitRatio', 'cache_hit_ratio'])
+  const cacheHitRatioChange = numOrNull(metrics, ['cacheHitRatioChange', 'cache_hit_ratio_change'])
+  const hasHealth = serverUptime !== null || errorRate !== null || queueDepth !== null || cacheHitRatio !== null
+  const healthSummary: DashboardHealthSummary | null = hasHealth
+    ? { serverUptime, serverUptimeChange, errorRate, errorRateChange, queueDepth, queueDepthChange, cacheHitRatio, cacheHitRatioChange }
+    : null
+
+  const changeText = (v: number | null, format: (n: number) => string) =>
+    v !== null ? format(v) : 'No live data'
 
   return (
     <PageTransition>
@@ -974,29 +1072,60 @@ export default function SuperAdminDashboard() {
 
       <div className={impersonating ? 'pt-10' : ''}>
         <div className="space-y-3">
-          {/* Stat Cards with Sparklines */}
+          {/* Stat Cards — live dashboard metrics */}
+          {dashboardQuery.isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {[0, 1, 2, 3, 4].map(i => (
+                <div key={i} className="bg-white rounded-lg p-3 border border-gray-100 animate-pulse">
+                  <div className="h-3 w-20 bg-gray-100 rounded mb-2" />
+                  <div className="h-6 w-16 bg-gray-100 rounded mb-2" />
+                  <div className="h-3 w-24 bg-gray-100 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : dashboardQuery.isError ? (
+            <div className="bg-white rounded-lg p-4 border border-red-200 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <div className="text-[12px] text-red-600 font-medium">Failed to load dashboard metrics. Check your connection and try again.</div>
+              <button onClick={() => dashboardQuery.refetch()}
+                className="px-3 py-1.5 text-[12px] font-medium text-white bg-[#1a2332] rounded-lg hover:bg-[#243044] transition-colors shrink-0">
+                Retry
+              </button>
+            </div>
+          ) : (
           <StaggerList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            <StaggerItem><StatCard icon={Users} label="Total Tenants" value={stats.totalTenants}
-              change={`↑ ${stats.totalTenantsChange} active`} changeType="up" color="#2E86AB"
-              sparkData={[28, 32, 30, 35, 38, 42, 45, 48, 52, 55, 58, 62]} /></StaggerItem>
-            <StaggerItem><StatCard icon={CreditCard} label="Active Subscriptions" value={stats.activeSubscriptions}
-              change={`↑ ${stats.activeSubscriptionsChange} this month`} changeType="up" color="#10B981"
-              sparkData={[15, 18, 20, 22, 25, 28, 30, 32, 35, 36, 38, 40]} /></StaggerItem>
-            <StaggerItem><StatCard icon={DollarSign} label="MRR" value={`$${stats.mrr.toLocaleString()}`}
-              change={`↑ ${stats.mrrChangePercent}% vs last month`} changeType="up" color="#8B5CF6"
-              sparkData={[15.2, 16.4, 18.7, 20.9, 22.4, 24.5]} /></StaggerItem>
-            <StaggerItem><StatCard icon={TrendingUp} label="Churn Rate" value={`${stats.churnRate}%`}
-              change={`↓ ${stats.churnRateChange} pp vs last month`} changeType="down" color="#F59E0B"
-              sparkData={[5.2, 4.8, 4.5, 4.0, 3.6, 3.2]} /></StaggerItem>
-            <StaggerItem><StatCard icon={Activity} label="API Calls Today" value={stats.apiCallsToday}
-              change={`↑ ${stats.apiCallsChangePercent}% vs yesterday`} changeType="up" color="#EF4444"
-              sparkData={[0.8, 0.9, 1.0, 1.1, 0.95, 1.1, 1.15, 1.2]} /></StaggerItem>
+            <StaggerItem><StatCard icon={Users} label="Total Tenants" value={totalTenants ?? '—'}
+              change={changeText(totalTenantsChange, n => `↑ ${n} active`)} changeType="up" color="#2E86AB" /></StaggerItem>
+            <StaggerItem><StatCard icon={CreditCard} label="Active Subscriptions" value={activeSubscriptions ?? '—'}
+              change={changeText(activeSubscriptionsChange, n => `↑ ${n} this month`)} changeType="up" color="#10B981" /></StaggerItem>
+            <StaggerItem><StatCard icon={DollarSign} label="MRR" value={mrr !== null ? `$${mrr.toLocaleString()}` : '—'}
+              change={changeText(mrrChangePercent, n => `↑ ${n}% vs last month`)} changeType="up" color="#8B5CF6" /></StaggerItem>
+            <StaggerItem><StatCard icon={TrendingUp} label="Churn Rate" value={churnRate !== null ? `${churnRate}%` : '—'}
+              change={changeText(churnRateChange, n => `↓ ${n} pp vs last month`)} changeType="down" color="#F59E0B" /></StaggerItem>
+            <StaggerItem><StatCard icon={Activity} label="API Calls Today" value={apiCallsToday ?? '—'}
+              change={changeText(apiCallsChangePercent, n => `↑ ${n}% vs yesterday`)} changeType="up" color="#EF4444" /></StaggerItem>
           </StaggerList>
+          )}
 
           {/* Revenue Chart + Tenant Table */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 items-start">
             <div>
-              <MiniRevenueChart />
+              {dashboardQuery.isLoading ? (
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm animate-pulse">
+                  <div className="h-4 w-48 bg-gray-100 rounded mb-2" />
+                  <div className="h-8 w-32 bg-gray-100 rounded mb-4" />
+                  <div className="h-[320px] bg-gray-50 rounded" />
+                </div>
+              ) : dashboardQuery.isError ? (
+                <div className="bg-white rounded-xl p-5 border border-red-200 shadow-sm flex flex-col gap-3">
+                  <div className="text-[12px] text-red-600 font-medium">Failed to load revenue data.</div>
+                  <button onClick={() => dashboardQuery.refetch()}
+                    className="px-3 py-1.5 text-[12px] font-medium text-white bg-[#1a2332] rounded-lg hover:bg-[#243044] transition-colors w-fit">
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <MiniRevenueChart data={revenuePoints} />
+              )}
             </div>
             <div>
               <TenantTable onImpersonate={setImpersonating} />
@@ -1007,7 +1136,28 @@ export default function SuperAdminDashboard() {
           <FadeIn><KeyFeatureFlags /></FadeIn>
 
           {/* System Health */}
-          <FadeIn><SystemHealthSection /></FadeIn>
+          <FadeIn>
+            {dashboardQuery.isLoading ? (
+              <div className="bg-white rounded-lg p-3 border border-gray-100 animate-pulse">
+                <div className="h-4 w-32 bg-gray-100 rounded mb-3" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} className="h-20 bg-gray-50 rounded-lg" />
+                  ))}
+                </div>
+              </div>
+            ) : dashboardQuery.isError ? (
+              <div className="bg-white rounded-lg p-4 border border-red-200 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                <div className="text-[12px] text-red-600 font-medium">Failed to load system health.</div>
+                <button onClick={() => dashboardQuery.refetch()}
+                  className="px-3 py-1.5 text-[12px] font-medium text-white bg-[#1a2332] rounded-lg hover:bg-[#243044] transition-colors shrink-0">
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <SystemHealthSection health={healthSummary} />
+            )}
+          </FadeIn>
 
           {/* Audit Log */}
           <FadeIn delay={0.1}><AuditLogSection /></FadeIn>
