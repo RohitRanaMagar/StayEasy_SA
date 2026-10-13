@@ -438,7 +438,7 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
 
     let data: { access_token: string; refresh_token?: string }
     try {
-      const res = await api.post('/auth/login', params, {
+      const res = await api.post('/auth/login?role=user', params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       })
       data = res.data
@@ -456,6 +456,7 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
       if (refreshToken) storage.setItem('refreshToken', refreshToken)
       storage.setItem('authRole', 'users')
       storage.setItem('userType', 'superadmin')
+      if (rememberMe) storage.setItem('tokenExpiry', (Date.now() + 30 * 24 * 60 * 60 * 1000).toString())
     }
     const clearPersisted = () => {
       ;[localStorage, sessionStorage].forEach(s => authKeys.forEach(k => s.removeItem(k)))

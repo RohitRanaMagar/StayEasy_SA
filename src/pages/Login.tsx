@@ -30,6 +30,7 @@ function persistSuperAdminAuth(accessToken: string, refreshToken: string | undef
   if (refreshToken) storage.setItem('refreshToken', refreshToken)
   storage.setItem('authRole', 'users')
   storage.setItem('userType', 'superadmin')
+  if (rememberMe) storage.setItem('tokenExpiry', (Date.now() + 30 * 24 * 60 * 60 * 1000).toString())
 }
 
 function clearSuperAdminAuth() {
@@ -89,7 +90,7 @@ export default function Login() {
         params.append('grant_type', 'password')
         params.append('username', email)
         params.append('password', password)
-        const res = await api.post('/auth/login', params, {
+        const res = await api.post('/auth/login?role=user', params, {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         })
         persistSuperAdminAuth(res.data.access_token, res.data.refresh_token, remember)
