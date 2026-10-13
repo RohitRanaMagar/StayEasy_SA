@@ -11,7 +11,7 @@ interface AuthContextValue {
   role: AuthRole
   loading: boolean
   login: (token: string, remember?: boolean, role?: AuthRole, refreshToken?: string) => Promise<void>
-  credentialLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  credentialLogin: (email: string, password: string, role?: AuthRole) => Promise<{ success: boolean; error?: string }>
   signup: (fullName: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
 }
@@ -111,15 +111,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchUser()
   }
 
-  const credentialLogin = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const credentialLogin = async (email: string, password: string, role: AuthRole = 'host'): Promise<{ success: boolean; error?: string }> => {
     try {
       const params = new URLSearchParams()
       params.append('username', email)
       params.append('password', password)
-      const res = await api.post('/auth/login', params, {
+      const res = await api.post(`/auth/login?role=${role === 'guest' ? 'guest' : 'user'}`, params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       })
-      await login(res.data.access_token, true, 'host', res.data.refresh_token)
+      await login(res.data.access_token, true, role, res.data.refresh_token)
       return { success: true }
     } catch (err) {
       let msg = 'Incorrect email or password.'
@@ -160,7 +160,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem(key)
         }
       }
-    } catch {}
+    } catch {
+      /* localStorage may be unavailable — nothing to clean up */
+    }
     setToken(null)
     setUser(null)
     setRole('host')

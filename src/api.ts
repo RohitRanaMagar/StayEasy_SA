@@ -23,7 +23,7 @@ function updateAccessToken(token: string) {
 }
 
 function clearAuthStorage() {
-  const keys = [TOKEN_KEY, REFRESH_KEY, ROLE_KEY, EXPIRY_KEY]
+  const keys = [TOKEN_KEY, REFRESH_KEY, ROLE_KEY, EXPIRY_KEY, 'superAdminToken', 'accessToken', 'userType', 'tempToken']
   keys.forEach((k) => {
     localStorage.removeItem(k)
     sessionStorage.removeItem(k)
@@ -52,8 +52,13 @@ async function refreshAccessToken(): Promise<string> {
 }
 
 function redirectToLogin() {
+  const userType = storageGet('userType')
   const role = storageGet(ROLE_KEY)
   clearAuthStorage()
+  if (userType === 'superadmin') {
+    window.location.href = '/superadmin/login'
+    return
+  }
   window.location.href = role === 'guest' ? '/login' : '/host/login'
 }
 
@@ -73,9 +78,7 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${newToken}`
         return api(original)
       } catch {
-        if (storageGet('userType') !== 'superadmin') {
-          redirectToLogin()
-        }
+        redirectToLogin()
       }
     }
     return Promise.reject(error)

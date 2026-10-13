@@ -5,9 +5,39 @@ import { Eye, EyeOff } from 'lucide-react'
 import loginHero from '../assets/Untitled-design-(2).mp4'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
-import { useSuperAdminStore } from '../components/superadmin/superAdminStore'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const SUPER_ADMIN_AUTH_KEYS = [
+  'token',
+  'refreshToken',
+  'superAdminToken',
+  'accessToken',
+  'authRole',
+  'userType',
+  'tokenExpiry',
+]
+
+function persistSuperAdminAuth(accessToken: string, refreshToken: string | undefined, rememberMe: boolean) {
+  SUPER_ADMIN_AUTH_KEYS.forEach((k) => {
+    localStorage.removeItem(k)
+    sessionStorage.removeItem(k)
+  })
+  const storage = rememberMe ? localStorage : sessionStorage
+  storage.setItem('token', accessToken)
+  storage.setItem('superAdminToken', accessToken)
+  storage.setItem('accessToken', accessToken)
+  if (refreshToken) storage.setItem('refreshToken', refreshToken)
+  storage.setItem('authRole', 'users')
+  storage.setItem('userType', 'superadmin')
+}
+
+function clearSuperAdminAuth() {
+  SUPER_ADMIN_AUTH_KEYS.forEach((k) => {
+    localStorage.removeItem(k)
+    sessionStorage.removeItem(k)
+  })
+}
 
 function extractError(err: unknown): string {
   if (err instanceof Error) return err.message
@@ -34,7 +64,6 @@ export default function Login() {
   }, [])
 
   const { login: authLogin } = useAuth()
-  const superAdminLogin = useSuperAdminStore(s => s.login)
 
   const isSuperAdmin = location.pathname.startsWith('/superadmin')
   const isHost = location.pathname.startsWith('/host') || searchParams.get('host') === 'true'
@@ -56,14 +85,29 @@ export default function Login() {
     setLoading(true)
     try {
       if (isSuperAdmin) {
-        await superAdminLogin(email, password, remember)
+        const params = new URLSearchParams()
+        params.append('grant_type', 'password')
+        params.append('username', email)
+        params.append('password', password)
+        const res = await api.post('/auth/login', params, {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        })
+        persistSuperAdminAuth(res.data.access_token, res.data.refresh_token, remember)
+        try {
+          await api.get('/superadmin/me')
+        } catch {
+          clearSuperAdminAuth()
+          setError('This account is not a superadmin')
+          setLoading(false)
+          return
+        }
         navigate('/superadmin')
       } else {
         const params = new URLSearchParams()
         params.append('grant_type', 'password')
         params.append('username', email)
         params.append('password', password)
-        const res = await api.post('/auth/login', params, {
+        const res = await api.post(`/auth/login?role=${isHost ? 'user' : 'guest'}`, params, {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         })
         await authLogin(res.data.access_token, remember, isHost ? 'host' : 'guest', res.data.refresh_token)

@@ -1,14 +1,16 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { PageLoader } from './components/PageLoader'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SuperAdminRoute } from './components/SuperAdminRoute'
 import { ScrollRestoration } from './components/ScrollRestoration'
+import HostPortalPageNew from './pages/HostPortalPageNew'
+import MyPropertiesPage from './pages/host/MyPropertiesPage'
+import RootRedirect from './components/RootRedirect'
 
 const Login = lazy(() => import('./pages/Login'))
 const Signup = lazy(() => import('./pages/Signup'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
-const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const SuperAdminLayout = lazy(() => import('./components/superadmin/SuperAdminLayout'))
 const SuperAdminDashboard = lazy(() => import('./pages/superadmin/SuperAdminDashboard'))
 const SuperAdminSystemHealth = lazy(() => import('./pages/superadmin/SystemHealthPage'))
@@ -49,9 +51,9 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/host/forgot-password" element={<ForgotPassword />} />
           <Route path="/superadmin/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/host/reset-password" element={<ResetPassword />} />
           <Route path="/superadmin/login" element={<Login />} />
+          <Route path="/host/portal" element={<HostPortalPageNew />} />
+          <Route path="/host/my-properties" element={<MyPropertiesPage />} />
           <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
             <Route index element={<SuperAdminDashboard />} />
             <Route path="system-health" element={<SuperAdminSystemHealth />} />
@@ -78,7 +80,8 @@ function App() {
             <Route path="notifications" element={<SuperAdminNotifications />} />
             <Route path="inbox" element={<SuperAdminInbox />} />
           </Route>
-          <Route path="*" element={<Navigate to="/superadmin/login" replace />} />
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="*" element={<RootRedirect />} />
         </Routes>
         </ErrorBoundary>
       </Suspense>

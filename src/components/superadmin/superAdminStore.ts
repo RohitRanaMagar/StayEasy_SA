@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import api from '../../api'
 import type {
   SuperAdminTenant, SuperAdminAuditLog, SuperAdminRevenueData,
   Plan, Subscription, BillingInvoice, PlanChangeLog,
@@ -13,7 +14,6 @@ import type {
   TenantExtended,
   TenantUsage, UsageMonthlyBreakdown, OverageCharge,
 } from '../../types/superadmin'
-import { mockSuperAdminLogin, saveCredentials } from '../../lib/superadmin-mock-auth'
 
 // ─── Helper: generate unique IDs ──────────────────────────
 let _counter = Date.now()
@@ -429,19 +429,46 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
   dashboardStats: calcDashboardStats([], []),
   revenueData: calcRevenueData([]),
 
-  // ─── Auth Actions (Mock) ─────────────────────────────
+  // ─── Auth Actions (Backend API) ─────────────────────────────
   login: async (email, password, rememberMe = true) => {
-    const result = await mockSuperAdminLogin(email, password)
+    const params = new URLSearchParams()
+    params.append('grant_type', 'password')
+    params.append('username', email)
+    params.append('password', password)
 
-    if (!result.success) {
-      throw new Error(result.error || 'Login failed')
+    let data: { access_token: string; refresh_token?: string }
+    try {
+      const res = await api.post('/auth/login', params, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      })
+      data = res.data
+    } catch {
+      throw new Error('Invalid email or password.')
     }
 
-    const storage = rememberMe ? localStorage : sessionStorage
-    storage.setItem('superAdminToken', result.token!)
-    storage.setItem('accessToken', result.token!)
-    storage.setItem('refreshToken', result.refreshToken!)
-    storage.setItem('userType', 'superadmin')
+    const authKeys = ['token', 'refreshToken', 'superAdminToken', 'accessToken', 'authRole', 'userType', 'tokenExpiry']
+    const persist = (accessToken: string, refreshToken?: string) => {
+      ;[localStorage, sessionStorage].forEach(s => authKeys.forEach(k => s.removeItem(k)))
+      const storage = rememberMe ? localStorage : sessionStorage
+      storage.setItem('token', accessToken)
+      storage.setItem('superAdminToken', accessToken)
+      storage.setItem('accessToken', accessToken)
+      if (refreshToken) storage.setItem('refreshToken', refreshToken)
+      storage.setItem('authRole', 'users')
+      storage.setItem('userType', 'superadmin')
+    }
+    const clearPersisted = () => {
+      ;[localStorage, sessionStorage].forEach(s => authKeys.forEach(k => s.removeItem(k)))
+    }
+
+    persist(data.access_token, data.refresh_token)
+
+    try {
+      await api.get('/superadmin/me')
+    } catch {
+      clearPersisted()
+      throw new Error('This account is not a superadmin')
+    }
 
     set({
       profile: {
@@ -453,11 +480,14 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
 
   logout: () => {
     ;[localStorage, sessionStorage].forEach(storage => {
+    storage.removeItem('token')
     storage.removeItem('accessToken')
     storage.removeItem('refreshToken')
     storage.removeItem('superAdminToken')
     storage.removeItem('tempToken')
     storage.removeItem('userType')
+    storage.removeItem('authRole')
+    storage.removeItem('tokenExpiry')
     })
     set({
       impersonation: { active: false, tenantId: null, tenantName: null, token: null, startedAt: null },
@@ -664,10 +694,7 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
   })),
 
   changePassword: (newPassword) => {
-    const currentEmail = get().profile.email
-    if (currentEmail) {
-      saveCredentials(currentEmail, newPassword)
-    }
+    void newPassword
     get().addAuditLog({
       admin: 'SuperAdmin', action: 'PASSWORD_CHANGED', target: 'self',
       details: 'SuperAdmin changed their password',
@@ -696,7 +723,7 @@ export const useSuperAdminStore = create<SuperAdminStore>((set, get) => ({
     set(s => ({ tenants: s.tenants.map(t => t.id === id ? { ...t, ...data } : t) }))
     if (prev) {
       const changes = Object.entries(data).map(([field, to]) => ({
-        field, from: String((prev as any)[field] ?? ''), to: String(to ?? ''),
+        field, from: String((prev as unknown as Record<string, unknown>)[field] ?? ''), to: String(to ?? ''),
       }))
       get().addAuditLog({
         admin: 'SuperAdmin', action: 'TENANT_UPDATED', target: prev.name,
