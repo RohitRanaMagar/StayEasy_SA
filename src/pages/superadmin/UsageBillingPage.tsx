@@ -1,11 +1,10 @@
 ﻿import { useState, useMemo } from 'react'
 import {
-  BarChart3, Download, TrendingUp, ArrowUpRight, ArrowDownRight,
+  Download, ArrowUpRight, ArrowDownRight,
   Search, ChevronLeft, ChevronRight, AlertTriangle,
   Zap, Database, Globe, Users, Settings, FileText,
-  ChevronDown, Activity, Shield,
+  ChevronDown, Activity,
 } from 'lucide-react'
-import type { TenantUsage, OverageCharge } from '../../types/superadmin'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition, FadeIn, StaggerList, StaggerItem } from '../../components/superadmin/Animations'
 
@@ -183,7 +182,7 @@ function UsageChart({ data, activeTab }: {
 export default function UsageBillingPage() {
   const { tenantUsageData, usageMonthlyBreakdown, overageCharges } = useSuperAdminStore()
 
-  const [activeTab, setActiveTab] = useState<ChartTab>('api')
+  const [activeTab] = useState<ChartTab>('api')
   const [tableTab, setTableTab] = useState<'consumers' | 'overage'>('consumers')
   const [search, setSearch] = useState('')
   const [sortField, setSortField] = useState<'apiCalls' | 'storageGB' | 'bandwidthGB' | 'usagePct'>('apiCalls')
