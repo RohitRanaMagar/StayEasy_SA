@@ -513,10 +513,10 @@ function BrandingConfigCard({ config }: { config: TenantBrandingConfig }) {
             <div className="flex items-center gap-2 pt-1">
               <button onClick={() => {
                 updateBranding(config.tenantId, { isWhiteLabel: true })
-                showToast('success', `Branding updated for ${config.tenantName}`)
+                showToast('success', `Branding updated for ${config.tenantName} (mock)`)
               }}
                 className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium text-[#2E86AB] border border-[#2E86AB]/30 rounded-lg hover:bg-[#2E86AB]/5 transition-colors">
-                <Edit size={10} /> Edit Branding
+                <Edit size={10} /> Edit Branding (mock)
               </button>
               <button onClick={() => window.open(`https://${config.customDomain}`, '_blank')}
                 className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">

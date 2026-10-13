@@ -275,7 +275,7 @@ function PlanCard({ plan, onEdit, onArchive, isActive }: { plan: Plan; onEdit: (
 function PlanEditorModal({ plan, onClose, onSave }: { plan: Plan | null; onClose: () => void; onSave?: (p: Plan, data: Partial<Plan>) => void | Promise<void> }) {
   const [saving, setSaving] = useState(false)
   const [name, setName] = useState(plan?.name || '')
-  const [desc, setDesc] = useState(plan?.description || '')
+  const [desc] = useState(plan?.description || '')
   const [monthlyPrice, setMonthlyPrice] = useState(plan?.monthlyPrice || 0)
   const [yearlyPrice, setYearlyPrice] = useState(plan?.yearlyPrice || 0)
   const [maxProps, setMaxProps] = useState(plan?.maxProperties === -1 ? -1 : plan?.maxProperties || 0)
@@ -285,7 +285,7 @@ function PlanEditorModal({ plan, onClose, onSave }: { plan: Plan | null; onClose
   const handleSave = async () => {
     setSaving(true)
     try {
-      await onSave?.(plan, { name, description: desc, monthlyPrice, yearlyPrice, maxProperties: maxProps })
+      await onSave?.(plan, { name, monthlyPrice, yearlyPrice, maxProperties: maxProps })
       onClose()
     } catch {
       // Parent mutation already toasted the error; keep the modal open.
@@ -390,14 +390,16 @@ function PlanEditorModal({ plan, onClose, onSave }: { plan: Plan | null; onClose
             </div>
           </div>
 
-          {/* Description */}
+          {/* Description (not supported by the API — displayed disabled so edits are never silently dropped) */}
           <div>
             <label className="block text-[11px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Description</label>              <textarea
               value={desc}
-              onChange={e => setDesc(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors resize-none"
+              disabled
+              title="Description is not supported by the API"
+              className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none resize-none bg-gray-50 text-gray-400 cursor-not-allowed"
             />
+            <p className="text-[10px] text-gray-400 mt-1">Not supported by the API — changes here are not saved.</p>
           </div>
         </div>
 
@@ -519,8 +521,7 @@ export default function PlansPage() {
   }, [popularKey])
   const safeIndex = visiblePlans.length === 0 ? 0 : Math.min(activeIndex, visiblePlans.length - 1)
 
-  const mrrFromPlans = activePlans.reduce((sum, p) => sum + p.monthlyPrice * p.activeSubscribers, 0)
-  const totalSubscribers = activePlans.reduce((sum, p) => sum + p.activeSubscribers, 0)
+  // NOTE: backend exposes no subscriber data, so subscriber/MRR metrics render as unavailable below.
 
   const goTo = (idx: number) => {
     if (idx < 0) setActiveIndex(visiblePlans.length - 1)
@@ -605,12 +606,14 @@ export default function PlansPage() {
           <div className="text-[10px] text-gray-400 mt-0.5">Total Plans</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-100 p-3">
-          <div className="text-lg font-bold text-gray-900">{totalSubscribers}</div>
+          <div className="text-lg font-bold text-gray-900">—</div>
           <div className="text-[10px] text-gray-400 mt-0.5">Active Subscribers</div>
+          <div className="text-[9px] text-gray-300 mt-0.5">Unavailable — no backend data</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-100 p-3">
-          <div className="text-lg font-bold text-gray-900">${mrrFromPlans.toLocaleString()}</div>
+          <div className="text-lg font-bold text-gray-900">—</div>
           <div className="text-[10px] text-gray-400 mt-0.5">MRR from Plans</div>
+          <div className="text-[9px] text-gray-300 mt-0.5">Unavailable — no backend data</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-100 p-3">
           <div className="text-lg font-bold text-emerald-600">
