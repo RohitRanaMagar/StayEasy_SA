@@ -24,11 +24,11 @@ function readField(obj: OpenPayload | null | undefined, keys: string[]): unknown
   return undefined
 }
 
-function numOrZero(obj: OpenPayload | null | undefined, keys: string[]): number {
+function numOrNull(obj: OpenPayload | null | undefined, keys: string[]): number | null {
   const v = readField(obj, keys)
   if (typeof v === 'number' && Number.isFinite(v)) return v
   if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v)
-  return 0
+  return null
 }
 
 function strOr(obj: OpenPayload | null | undefined, keys: string[], fallback: string): string {
@@ -385,21 +385,22 @@ export default function SystemHealthPage() {
   const healthQuery = useQuery({ queryKey: ['sa-health'], queryFn: getSystemHealth })
   const payload = (healthQuery.data ?? null) as OpenPayload | null
 
-  // Map ONLY fields present in the real response — no invented values.
+  // Map ONLY fields present in the real response — null when absent so
+  // each card renders an explicit no-data state instead of a fake zero.
   const systemHealth = {
-    serverUptime: numOrZero(payload, ['serverUptime', 'server_uptime', 'uptime']),
-    serverUptimeChange: numOrZero(payload, ['serverUptimeChange', 'server_uptime_change', 'uptime_change']),
-    errorRate: numOrZero(payload, ['errorRate', 'error_rate']),
-    errorRateChange: numOrZero(payload, ['errorRateChange', 'error_rate_change']),
-    averageResponseTime: numOrZero(payload, ['averageResponseTime', 'average_response_time', 'avg_response_time', 'avgResponseTime']),
-    p99ResponseTime: numOrZero(payload, ['p99ResponseTime', 'p99_response_time', 'p99']),
-    activeConnections: numOrZero(payload, ['activeConnections', 'active_connections']),
-    requestRate: numOrZero(payload, ['requestRate', 'request_rate']),
-    queueDepth: numOrZero(payload, ['queueDepth', 'queue_depth']),
-    queueDepthChange: numOrZero(payload, ['queueDepthChange', 'queue_depth_change']),
-    cacheHitRatio: numOrZero(payload, ['cacheHitRatio', 'cache_hit_ratio']),
-    networkInbound: numOrZero(payload, ['networkInbound', 'network_inbound']),
-    networkOutbound: numOrZero(payload, ['networkOutbound', 'network_outbound']),
+    serverUptime: numOrNull(payload, ['serverUptime', 'server_uptime', 'uptime']),
+    serverUptimeChange: numOrNull(payload, ['serverUptimeChange', 'server_uptime_change', 'uptime_change']),
+    errorRate: numOrNull(payload, ['errorRate', 'error_rate']),
+    errorRateChange: numOrNull(payload, ['errorRateChange', 'error_rate_change']),
+    averageResponseTime: numOrNull(payload, ['averageResponseTime', 'average_response_time', 'avg_response_time', 'avgResponseTime']),
+    p99ResponseTime: numOrNull(payload, ['p99ResponseTime', 'p99_response_time', 'p99']),
+    activeConnections: numOrNull(payload, ['activeConnections', 'active_connections']),
+    requestRate: numOrNull(payload, ['requestRate', 'request_rate']),
+    queueDepth: numOrNull(payload, ['queueDepth', 'queue_depth']),
+    queueDepthChange: numOrNull(payload, ['queueDepthChange', 'queue_depth_change']),
+    cacheHitRatio: numOrNull(payload, ['cacheHitRatio', 'cache_hit_ratio']),
+    networkInbound: numOrNull(payload, ['networkInbound', 'network_inbound']),
+    networkOutbound: numOrNull(payload, ['networkOutbound', 'network_outbound']),
     networkUnit: strOr(payload, ['networkUnit', 'network_unit'], 'Mbps'),
   }
 
@@ -506,47 +507,47 @@ export default function SystemHealthPage() {
         <MetricCard
           icon={Activity}
           label="Uptime"
-          value={`${systemHealth.serverUptime}%`}
-          sub="Last 30 days"
+          value={systemHealth.serverUptime !== null ? `${systemHealth.serverUptime}%` : '—'}
+          sub={systemHealth.serverUptime !== null ? 'Last 30 days' : 'No data'}
           color="#10B981"
-          trend={{ value: `+${systemHealth.serverUptimeChange} pp`, up: true }}
+          trend={systemHealth.serverUptimeChange !== null ? { value: `+${systemHealth.serverUptimeChange} pp`, up: true } : undefined}
         />
         <MetricCard
           icon={AlertTriangle}
           label="Error Rate"
-          value={`${systemHealth.errorRate}%`}
-          sub="Of total requests"
+          value={systemHealth.errorRate !== null ? `${systemHealth.errorRate}%` : '—'}
+          sub={systemHealth.errorRate !== null ? 'Of total requests' : 'No data'}
           color="#F59E0B"
-          trend={{ value: `${Math.abs(systemHealth.errorRateChange)} pp`, up: false }}
+          trend={systemHealth.errorRateChange !== null ? { value: `${Math.abs(systemHealth.errorRateChange)} pp`, up: false } : undefined}
         />
         <MetricCard
           icon={Zap}
           label="Avg Response"
-          value={`${systemHealth.averageResponseTime}ms`}
-          sub={`P99: ${systemHealth.p99ResponseTime}ms`}
+          value={systemHealth.averageResponseTime !== null ? `${systemHealth.averageResponseTime}ms` : '—'}
+          sub={systemHealth.averageResponseTime !== null ? (systemHealth.p99ResponseTime !== null ? `P99: ${systemHealth.p99ResponseTime}ms` : 'P99: No data') : 'No data'}
           color="#8B5CF6"
         />
         <MetricCard
           icon={Wifi}
           label="Active Connections"
-          value={formatNumber(systemHealth.activeConnections)}
-          sub="Current open"
+          value={systemHealth.activeConnections !== null ? formatNumber(systemHealth.activeConnections) : '—'}
+          sub={systemHealth.activeConnections !== null ? 'Current open' : 'No data'}
           color="#2E86AB"
         />
         <MetricCard
           icon={Layers}
           label="Request Rate"
-          value={`${systemHealth.requestRate}/s`}
-          sub="Requests per second"
+          value={systemHealth.requestRate !== null ? `${systemHealth.requestRate}/s` : '—'}
+          sub={systemHealth.requestRate !== null ? 'Requests per second' : 'No data'}
           color="#EF4444"
         />
         <MetricCard
           icon={Database}
           label="Queue Depth"
-          value={systemHealth.queueDepth}
-          sub="Pending jobs"
+          value={systemHealth.queueDepth ?? '—'}
+          sub={systemHealth.queueDepth !== null ? 'Pending jobs' : 'No data'}
           color="#3B82F6"
-          trend={{ value: `${Math.abs(systemHealth.queueDepthChange)} decreasing`, up: true }}
+          trend={systemHealth.queueDepthChange !== null ? { value: `${Math.abs(systemHealth.queueDepthChange)} decreasing`, up: true } : undefined}
         />
       </div>
 
@@ -675,8 +676,8 @@ export default function SystemHealthPage() {
                 <Globe size={13} className="text-[#EF4444]" /> Network Traffic
               </span>
               <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                <span>↓ In: <span className="font-semibold text-gray-600">{systemHealth.networkInbound}{systemHealth.networkUnit}</span></span>
-                <span>↑ Out: <span className="font-semibold text-gray-600">{systemHealth.networkOutbound}{systemHealth.networkUnit}</span></span>
+                <span>↓ In: <span className="font-semibold text-gray-600">{systemHealth.networkInbound !== null ? `${systemHealth.networkInbound}${systemHealth.networkUnit}` : '—'}</span></span>
+                <span>↑ Out: <span className="font-semibold text-gray-600">{systemHealth.networkOutbound !== null ? `${systemHealth.networkOutbound}${systemHealth.networkUnit}` : '—'}</span></span>
                 <span>Current: <span className="font-semibold text-gray-600">{networkMetrics.current}{networkMetrics.unit}</span></span>
               </div>
             </div>
@@ -726,20 +727,20 @@ export default function SystemHealthPage() {
       {/* ── Summary Footer Stats ───────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-white rounded-lg border border-gray-100 p-3 text-center">
-          <div className="text-lg font-bold text-gray-900">{systemHealth.serverUptime}%</div>
-          <div className="text-[10px] text-gray-400 mt-0.5">Overall Uptime (30d)</div>
+          <div className="text-lg font-bold text-gray-900">{systemHealth.serverUptime !== null ? `${systemHealth.serverUptime}%` : '—'}</div>
+          <div className="text-[10px] text-gray-400 mt-0.5">Overall Uptime (30d){systemHealth.serverUptime === null ? ' — No data' : ''}</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-100 p-3 text-center">
-          <div className="text-lg font-bold text-emerald-600">{systemHealth.cacheHitRatio}%</div>
-          <div className="text-[10px] text-gray-400 mt-0.5">Cache Hit Ratio</div>
+          <div className="text-lg font-bold text-emerald-600">{systemHealth.cacheHitRatio !== null ? `${systemHealth.cacheHitRatio}%` : '—'}</div>
+          <div className="text-[10px] text-gray-400 mt-0.5">Cache Hit Ratio{systemHealth.cacheHitRatio === null ? ' — No data' : ''}</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-100 p-3 text-center">
-          <div className="text-lg font-bold text-gray-900">{formatNumber(systemHealth.activeConnections)}</div>
-          <div className="text-[10px] text-gray-400 mt-0.5">Active Connections</div>
+          <div className="text-lg font-bold text-gray-900">{systemHealth.activeConnections !== null ? formatNumber(systemHealth.activeConnections) : '—'}</div>
+          <div className="text-[10px] text-gray-400 mt-0.5">Active Connections{systemHealth.activeConnections === null ? ' — No data' : ''}</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-100 p-3 text-center">
-          <div className="text-lg font-bold text-gray-900">{systemHealth.averageResponseTime}ms</div>
-          <div className="text-[10px] text-gray-400 mt-0.5">Avg Response Time</div>
+          <div className="text-lg font-bold text-gray-900">{systemHealth.averageResponseTime !== null ? `${systemHealth.averageResponseTime}ms` : '—'}</div>
+          <div className="text-[10px] text-gray-400 mt-0.5">Avg Response Time{systemHealth.averageResponseTime === null ? ' — No data' : ''}</div>
         </div>
       </div>
     </div>

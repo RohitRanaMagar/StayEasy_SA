@@ -95,7 +95,7 @@ function Sparkline({ data, color = '#2E86AB' }: { data: number[]; color?: string
 
 function StatCard({ icon: Icon, label, value, change, changeType, color, sparkData }: {
   icon: typeof Users; label: string; value: string | number;
-  change: string; changeType: 'up' | 'down'; color: string; sparkData?: number[]
+  change: string; changeType?: 'up' | 'down'; color: string; sparkData?: number[]
 }) {
   return (
     <div className="bg-white rounded-lg p-3 border border-gray-100 hover:shadow-sm hover:border-gray-200 transition-all">
@@ -111,8 +111,8 @@ function StatCard({ icon: Icon, label, value, change, changeType, color, sparkDa
           </div>
         </div>
       </div>
-      <div className={`flex items-center gap-1 text-[11px] font-medium ${changeType === 'up' ? 'text-emerald-600' : 'text-red-500'}`}>
-        {changeType === 'up' ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+      <div className={`flex items-center gap-1 text-[11px] font-medium ${changeType === 'up' ? 'text-emerald-600' : changeType === 'down' ? 'text-red-500' : 'text-gray-400'}`}>
+        {changeType === 'up' ? <ArrowUpRight size={11} /> : changeType === 'down' ? <ArrowDownRight size={11} /> : null}
         <span className="truncate">{change}</span>
       </div>
     </div>
@@ -151,7 +151,7 @@ const MiniRevenueChart = memo(({ data }: { data: RevenuePoint[] | null }) => {
     const min = Math.min(...chartData.map(d => d.revenue))
     const range = max - min || 1
     const points = chartData.map((d, i) => ({
-      x: PAD.l + (i / (chartData.length - 1)) * chartW,
+      x: chartData.length > 1 ? PAD.l + (i / (chartData.length - 1)) * chartW : PAD.l + chartW / 2,
       y: PAD.t + (1 - (d.revenue - min) / range) * chartH,
       revenue: d.revenue,
       month: d.month,
@@ -170,6 +170,14 @@ const MiniRevenueChart = memo(({ data }: { data: RevenuePoint[] | null }) => {
   if (chartData.length === 0) {
     return <EmptyCard icon={BarChart3} message="No revenue data" />
   }
+
+  if (chartData.length < 2) {
+    return <EmptyCard icon={BarChart3} message="Not enough revenue data" />
+  }
+
+  const hoveredPoint = hoveredIndex !== null && hoveredIndex >= 0 && hoveredIndex < chartData.length
+    ? chartData[hoveredIndex]
+    : null
 
   return (
     <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
@@ -207,10 +215,10 @@ const MiniRevenueChart = memo(({ data }: { data: RevenuePoint[] | null }) => {
         </div>
       </div>
 
-      {hoveredIndex !== null && (
+      {hoveredPoint !== null && (
         <div className="mb-2 flex items-center gap-3 text-[11px] bg-gray-900 text-white rounded-lg px-3 py-1.5 w-fit">
-          <span className="font-medium">{chartData[hoveredIndex].month}</span>
-          <span className="text-emerald-300 font-bold">${chartData[hoveredIndex].revenue.toLocaleString()}</span>
+          <span className="font-medium">{hoveredPoint.month}</span>
+          <span className="text-emerald-300 font-bold">${hoveredPoint.revenue.toLocaleString()}</span>
         </div>
       )}
 
@@ -1094,15 +1102,15 @@ export default function SuperAdminDashboard() {
           ) : (
           <StaggerList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
             <StaggerItem><StatCard icon={Users} label="Total Tenants" value={totalTenants ?? '—'}
-              change={changeText(totalTenantsChange, n => `↑ ${n} active`)} changeType="up" color="#2E86AB" /></StaggerItem>
+              change={changeText(totalTenantsChange, n => `↑ ${n} active`)} changeType={totalTenantsChange !== null ? 'up' : undefined} color="#2E86AB" /></StaggerItem>
             <StaggerItem><StatCard icon={CreditCard} label="Active Subscriptions" value={activeSubscriptions ?? '—'}
-              change={changeText(activeSubscriptionsChange, n => `↑ ${n} this month`)} changeType="up" color="#10B981" /></StaggerItem>
+              change={changeText(activeSubscriptionsChange, n => `↑ ${n} this month`)} changeType={activeSubscriptionsChange !== null ? 'up' : undefined} color="#10B981" /></StaggerItem>
             <StaggerItem><StatCard icon={DollarSign} label="MRR" value={mrr !== null ? `$${mrr.toLocaleString()}` : '—'}
-              change={changeText(mrrChangePercent, n => `↑ ${n}% vs last month`)} changeType="up" color="#8B5CF6" /></StaggerItem>
+              change={changeText(mrrChangePercent, n => `↑ ${n}% vs last month`)} changeType={mrrChangePercent !== null ? 'up' : undefined} color="#8B5CF6" /></StaggerItem>
             <StaggerItem><StatCard icon={TrendingUp} label="Churn Rate" value={churnRate !== null ? `${churnRate}%` : '—'}
-              change={changeText(churnRateChange, n => `↓ ${n} pp vs last month`)} changeType="down" color="#F59E0B" /></StaggerItem>
+              change={changeText(churnRateChange, n => `↓ ${n} pp vs last month`)} changeType={churnRateChange !== null ? 'down' : undefined} color="#F59E0B" /></StaggerItem>
             <StaggerItem><StatCard icon={Activity} label="API Calls Today" value={apiCallsToday ?? '—'}
-              change={changeText(apiCallsChangePercent, n => `↑ ${n}% vs yesterday`)} changeType="up" color="#EF4444" /></StaggerItem>
+              change={changeText(apiCallsChangePercent, n => `↑ ${n}% vs yesterday`)} changeType={apiCallsChangePercent !== null ? 'up' : undefined} color="#EF4444" /></StaggerItem>
           </StaggerList>
           )}
 
