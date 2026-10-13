@@ -1,11 +1,6 @@
 import api from '../api'
 import type {
-  GeneralInfoPayload,
   GeneralInfoResponse,
-  LocationPayload,
-  PhotosAmenitiesPayload,
-  LocalizationPayload,
-  BrandVisualPayload,
   RoomBase,
   RoomBulkCreateRequest,
   RoomResponse,
@@ -24,25 +19,74 @@ import type {
 
 // ─── Properties ──────────────────────────────────────────────
 
-export const createGeneralInfo = async (data: GeneralInfoPayload): Promise<GeneralInfoResponse> => {
-  const { data: result } = await api.post('/properties/general-information', data)
+// Mirrors backend schemas GeneralPropertyInfo / Location /
+// PropertyPhotosAndAmenities / Propertylocalization / BrandVisual
+// (field names copied exactly from the OpenAPI spec).
+
+export interface GeneralPropertyInfo {
+  name: string
+  type?: string
+  description?: string | null
+  total_rooms?: number
+  year_built?: number | null
+  number_of_floors?: number
+  phone_number: string
+  email: string
+}
+
+export interface Location {
+  country: string
+  state: string
+  city: string
+  zip_code: string
+  address: string
+  latitude?: number | string | null
+  longitude?: number | string | null
+}
+
+export interface PropertyPhotosAndAmenities {
+  photos?: {
+    cover?: string | null
+    gallery?: string[]
+  }
+  amenities?: {
+    system_amenity_ids?: string[]
+    custom_amenities?: { name: string; icon?: string | null }[]
+  }
+}
+
+export interface Propertylocalization {
+  currency?: string
+  timezone?: string
+  language?: string
+  check_in_time?: string | null
+  check_out_time?: string | null
+  check_in_grace_period?: number
+  check_out_grace_period?: number
+  always_allow_check_in_out?: boolean
+  allow_pay_on_arrival?: boolean
+  min_advance_percentage?: number
+  max_advance_percentage?: number
+}
+
+export interface BrandVisual {
+  brand_logo_url?: string | null
+  brand_color?: string | null
+}
+
+export interface CreatePropertyPayload {
+  general_information: GeneralPropertyInfo
+  location: Location
+  photos_and_amenities?: PropertyPhotosAndAmenities
+  localization?: Propertylocalization
+  brand_visual?: BrandVisual | null
+}
+
+export const createProperty = async (
+  payload: CreatePropertyPayload,
+): Promise<{ id: string } & Record<string, unknown>> => {
+  const { data: result } = await api.post('/properties', payload)
   return result.data
-}
-
-export const createLocation = async (propertyId: string, data: LocationPayload): Promise<void> => {
-  await api.post(`/properties/${propertyId}/create-location`, data)
-}
-
-export const createPhotosAmenities = async (propertyId: string, data: PhotosAmenitiesPayload): Promise<void> => {
-  await api.post(`/properties/${propertyId}/create-photos-and-amenities`, data)
-}
-
-export const createLocalization = async (propertyId: string, data: LocalizationPayload): Promise<void> => {
-  await api.post(`/properties/${propertyId}/create-localization`, data)
-}
-
-export const createBrandVisual = async (propertyId: string, data: BrandVisualPayload): Promise<void> => {
-  await api.post(`/properties/${propertyId}/create-brand-visual`, data)
 }
 
 export const getProperty = async (id: string): Promise<GeneralInfoResponse> => {
@@ -55,7 +99,7 @@ export const getAllProperties = async (): Promise<GeneralInfoResponse[]> => {
   let skip = 0
   const pageSize = 50
   for (;;) {
-    const { data: result } = await api.get('/properties/', { params: { skip, limit: pageSize } })
+    const { data: result } = await api.get('/properties', { params: { skip, limit: pageSize } })
     const batch: GeneralInfoResponse[] = result.data?.properties ?? []
     all.push(...batch)
     if (batch.length < pageSize) break
@@ -80,8 +124,8 @@ export const getAmenities = async (): Promise<AmenityOption[]> => {
 
 // ─── Images ──────────────────────────────────────────────────
 
-export const uploadPropertyImage = async (propertyId: string, formData: FormData): Promise<string[]> => {
-  const { data: result } = await api.post(`/properties/${propertyId}/images`, formData, {
+export const uploadPropertyImage = async (formData: FormData): Promise<string[]> => {
+  const { data: result } = await api.post('/properties/images', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
   return Array.isArray(result.data) ? result.data : []
@@ -154,12 +198,12 @@ export const createBedType = async (propertyId: string, bedName: string): Promis
 // ─── Special Offers ──────────────────────────────────────────
 
 export const createSpecialOffers = async (propertyId: string, offers: SpecialOfferPayload[]): Promise<SpecialOfferResponse[]> => {
-  const { data: result } = await api.post(`/properties/${propertyId}/special-offers/`, { offers })
+  const { data: result } = await api.post(`/properties/${propertyId}/special-offers`, { offers })
   return result.data
 }
 
 export const getSpecialOffers = async (propertyId: string): Promise<SpecialOfferResponse[]> => {
-  const { data: result } = await api.get(`/properties/${propertyId}/special-offers/`)
+  const { data: result } = await api.get(`/properties/${propertyId}/special-offers`)
   return result.data
 }
 
@@ -180,12 +224,12 @@ export const deleteSpecialOffer = async (propertyId: string, offerId: string): P
 // ─── Discount Codes ─────────────────────────────────────────
 
 export const createDiscountCode = async (propertyId: string, data: DiscountCodePayload): Promise<DiscountCodeResponse> => {
-  const { data: result } = await api.post(`/properties/${propertyId}/discount-codes/`, data)
+  const { data: result } = await api.post(`/properties/${propertyId}/discount-codes`, data)
   return result.data
 }
 
 export const getDiscountCodes = async (propertyId: string): Promise<DiscountCodeResponse[]> => {
-  const { data: result } = await api.get(`/properties/${propertyId}/discount-codes/`)
+  const { data: result } = await api.get(`/properties/${propertyId}/discount-codes`)
   return result.data
 }
 
@@ -206,22 +250,22 @@ export const deleteDiscountCode = async (propertyId: string, discountId: string)
 // ─── Tenant ─────────────────────────────────────────────────
 
 export const getTenant = async (): Promise<TenantResponse> => {
-  const { data: result } = await api.get('/tenants/')
+  const { data: result } = await api.get('/tenants')
   return result.data
 }
 
 export const createTenant = async (name: string): Promise<TenantResponse> => {
-  const { data: result } = await api.post('/tenants/', { name })
+  const { data: result } = await api.post('/tenants', { name })
   return result.data
 }
 
 export const updateTenant = async (name: string): Promise<TenantResponse> => {
-  const { data: result } = await api.patch('/tenants/', { name })
+  const { data: result } = await api.patch('/tenants', { name })
   return result.data
 }
 
 export const deleteTenant = async (): Promise<void> => {
-  await api.delete('/tenants/')
+  await api.delete('/tenants')
 }
 
 // ─── Bookings ───────────────────────────────────────────────

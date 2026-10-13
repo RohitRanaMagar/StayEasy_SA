@@ -15,11 +15,7 @@ import Step5PricingOffers from '../components/portal/Step5PricingOffers'
 import Step6Review from '../components/portal/Step6Review'
 import NavigationButtons from '../components/portal/NavigationButtons'
 import {
-  createGeneralInfo,
-  createLocation,
-  createPhotosAmenities,
-  createLocalization,
-  createBrandVisual,
+  createProperty,
   uploadPropertyImage,
   uploadRoomImages,
   createRooms,
@@ -34,16 +30,14 @@ import {
   createTenant,
 } from '../services/pmsApi'
 import type {
-  GeneralInfoPayload,
-  LocationPayload,
-  PhotosAmenitiesPayload,
-  PhotosAmenityCustom,
-  AmenityOption,
-  LocalizationPayload,
-  BrandVisualPayload,
-  RoomBase,
-  SpecialOfferPayload,
-} from '../types/pms'
+  CreatePropertyPayload,
+  GeneralPropertyInfo,
+  Location as LocationPayload,
+  PropertyPhotosAndAmenities,
+  Propertylocalization,
+  BrandVisual,
+} from '../services/pmsApi'
+import type { PhotosAmenityCustom, AmenityOption, RoomBase, SpecialOfferPayload } from '../types/pms'
 import '../styles/portal.css'
 
 type WizardStep = 'type' | 'property' | 'location' | 'photos' | 'localization' | 'branding' | 'rooms' | 'pricing' | 'review'
@@ -319,23 +313,10 @@ export default function HostPortalPageNew() {
           } catch {
             await createTenant(propertyData.name || 'My Property')
           }
-          const payload: GeneralInfoPayload = {
-            name: propertyData.name,
-            type: propertyData.type,
-            total_rooms: propertyData.totalRooms,
-            number_of_floors: propertyData.floors,
-            year_built: propertyData.yearBuilt,
-            description: propertyData.description,
-            phone_number: propertyData.phone,
-            email: propertyData.email,
-          }
-          const result = await createGeneralInfo(payload)
-          setPropertyId(result.id)
           return true
         }
 
         case 'location': {
-          if (propertyId === null) return false
           const requiredFields: [string, string][] = [
             ['Country', locationData.country],
             ['State/Province', locationData.state],
@@ -348,23 +329,31 @@ export default function HostPortalPageNew() {
             setSaveError(`${missing[0]} must be at least 2 characters before continuing.`)
             return false
           }
-          const payload: LocationPayload = {
-            country: locationData.country,
-            state: locationData.state,
-            city: locationData.city,
-            zip_code: locationData.zip,
-            address: locationData.street,
-            latitude: locationData.latitude,
-            longitude: locationData.longitude,
-          }
-          await createLocation(propertyId, payload)
           return true
         }
 
         case 'photos': {
-          if (propertyId === null) return false
+          return true
+        }
 
-          let coverUrl = ''
+        case 'localization': {
+          if (!localizationData.allowAlwaysCheckIn) {
+            const checkIn = localizationData.checkInTime.trim()
+            const checkOut = localizationData.checkOutTime.trim()
+            if (checkIn.length < 2) {
+              setSaveError('Check-in Time must be at least 2 characters before continuing.')
+              return false
+            }
+            if (checkOut.length < 2) {
+              setSaveError('Check-out Time must be at least 2 characters before continuing.')
+              return false
+            }
+          }
+          return true
+        }
+
+        case 'branding': {
+          let coverUrl: string | null = null
           let galleryUrls: string[] = []
 
           if (photos.length > 0) {
@@ -373,7 +362,7 @@ export default function HostPortalPageNew() {
               : photos
             const formData = new FormData()
             orderedPhotos.forEach(p => formData.append('files', p))
-            const uploadedUrls = await uploadPropertyImage(propertyId, formData)
+            const uploadedUrls = await uploadPropertyImage(formData)
 
             if (uploadedUrls.length > 0) {
               coverUrl = uploadedUrls[0]
@@ -381,7 +370,41 @@ export default function HostPortalPageNew() {
             }
           }
 
-          const payload: PhotosAmenitiesPayload = {
+          let logoUrl: string | null = null
+          if (brandData.logo) {
+            const formData = new FormData()
+            formData.append('files', brandData.logo)
+            const urls = await uploadPropertyImage(formData)
+            if (urls.length > 0) logoUrl = urls[0]
+          }
+
+          let checkInTime: string | null = null
+          let checkOutTime: string | null = null
+          if (!localizationData.allowAlwaysCheckIn) {
+            checkInTime = localizationData.checkInTime.trim()
+            checkOutTime = localizationData.checkOutTime.trim()
+          }
+
+          const generalInformation: GeneralPropertyInfo = {
+            name: propertyData.name,
+            type: propertyData.type,
+            total_rooms: propertyData.totalRooms,
+            number_of_floors: propertyData.floors,
+            year_built: propertyData.yearBuilt,
+            description: propertyData.description,
+            phone_number: propertyData.phone,
+            email: propertyData.email,
+          }
+          const locationPayload: LocationPayload = {
+            country: locationData.country,
+            state: locationData.state,
+            city: locationData.city,
+            zip_code: locationData.zip,
+            address: locationData.street,
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+          }
+          const photosAmenities: PropertyPhotosAndAmenities = {
             photos: {
               cover: coverUrl,
               gallery: galleryUrls,
@@ -390,32 +413,8 @@ export default function HostPortalPageNew() {
               system_amenity_ids: systemAmenityIds,
               custom_amenities: customAmenities,
             },
-            star_rating: starRating,
           }
-          await createPhotosAmenities(propertyId, payload)
-          return true
-        }
-
-        case 'localization': {
-          if (propertyId === null) return false
-
-          let checkInTime: string | null = null
-          let checkOutTime: string | null = null
-
-          if (!localizationData.allowAlwaysCheckIn) {
-            checkInTime = localizationData.checkInTime.trim()
-            checkOutTime = localizationData.checkOutTime.trim()
-            if (checkInTime.length < 2) {
-              setSaveError('Check-in Time must be at least 2 characters before continuing.')
-              return false
-            }
-            if (checkOutTime.length < 2) {
-              setSaveError('Check-out Time must be at least 2 characters before continuing.')
-              return false
-            }
-          }
-
-          const payload: LocalizationPayload = {
+          const localization: Propertylocalization = {
             currency: localizationData.currency,
             timezone: localizationData.timezone,
             language: localizationData.language,
@@ -425,24 +424,19 @@ export default function HostPortalPageNew() {
             check_out_grace_period: localizationData.lateCheckOutGrace,
             always_allow_check_in_out: localizationData.allowAlwaysCheckIn,
           }
-          await createLocalization(propertyId, payload)
-          return true
-        }
-
-        case 'branding': {
-          if (propertyId === null) return false
-          let logoUrl: string | null = null
-          if (brandData.logo) {
-            const formData = new FormData()
-            formData.append('files', brandData.logo)
-            const urls = await uploadPropertyImage(propertyId, formData)
-            if (urls.length > 0) logoUrl = urls[0]
-          }
-          const payload: BrandVisualPayload = {
+          const brandVisual: BrandVisual = {
             brand_color: brandData.brandColor,
             brand_logo_url: logoUrl,
           }
-          await createBrandVisual(propertyId, payload)
+          const payload: CreatePropertyPayload = {
+            general_information: generalInformation,
+            location: locationPayload,
+            photos_and_amenities: photosAmenities,
+            localization,
+            brand_visual: brandVisual,
+          }
+          const result = await createProperty(payload)
+          setPropertyId(result.id)
           return true
         }
 
@@ -575,7 +569,7 @@ export default function HostPortalPageNew() {
       setSaveError(msg)
       return false
     }
-  }, [currentStep, propertyData, locationData, systemAmenityIds, customAmenities, starRating, localizationData, brandData, rooms, offers, photos, propertyId])
+  }, [currentStep, propertyData, locationData, systemAmenityIds, customAmenities, localizationData, brandData, rooms, offers, photos, coverIndex, availableAmenities, propertyId])
 
   const handleNext = useCallback(async () => {
     setIsSaving(true)
