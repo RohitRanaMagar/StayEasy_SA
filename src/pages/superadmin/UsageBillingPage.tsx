@@ -91,6 +91,15 @@ function UsageChart({ data, activeTab }: {
     })
   }, [data, activeTab])
 
+  if (chartData.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-gray-900">API Calls Trend</h3>
+        <p className="text-sm text-gray-400 mt-4">No usage data available.</p>
+      </div>
+    )
+  }
+
   const w = 700, h = 200, padL = 50, padR = 20, padT = 20, padB = 40
   const plotW = w - padL - padR
   const plotH = h - padT - padB
