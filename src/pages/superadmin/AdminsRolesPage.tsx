@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Users, Shield, Search, ChevronRight,
-  CheckCircle, XCircle, Clock, Mail, UserPlus,
+  CheckCircle, Clock, Mail, UserPlus,
   MoreHorizontal, Edit, Loader2, Trash2,
 } from 'lucide-react'
 import { useToast } from '../../components/superadmin/Toast'
@@ -457,7 +457,7 @@ export default function AdminsRolesPage() {
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${statusColors[admin.status]}`}>{admin.status}</span>
                     </td>
                     <td className="py-2.5 px-3" title="MFA status unavailable — no backend data">
-                      <XCircle size={13} className="text-gray-300" />
+                      <span className="text-[10px] text-gray-300">—</span>
                     </td>
                     <td className="py-2.5 px-3 text-[10px] text-gray-300">—</td>
                     <td className="py-2.5 px-3 text-[10px] text-gray-400">{admin.joinedAt}</td>

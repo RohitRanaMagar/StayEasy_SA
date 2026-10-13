@@ -27,7 +27,10 @@ interface LivePlan {
 }
 
 function toLivePlan(p: PlanResponse): LivePlan {
-  return { id: p.id, name: p.name, monthlyPrice: Number(p.price_monthly) || 0 }
+  const parsed = Number(p.price_monthly)
+  // price_monthly arrives as a numeric string; fall back to 0 only when it
+  // is missing/unparseable so the plan row still renders a price.
+  return { id: p.id, name: p.name, monthlyPrice: Number.isFinite(parsed) ? parsed : 0 }
 }
 // ═══════════════════════════════════════════════════════════════
 // Utility

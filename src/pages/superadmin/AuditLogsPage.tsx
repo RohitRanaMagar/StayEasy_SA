@@ -158,6 +158,7 @@ function LogsOverTimeChart({ logs }: { logs: SuperAdminAuditLog[] }) {
           <span className="text-[10px] text-gray-500">Error</span>
         </div>
       </div>
+      <p className="text-[10px] text-gray-400 mb-2">Severity unavailable — backend provides no severity; all entries shown as Info.</p>
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: 180 }}>
         {[0, 0.25, 0.5, 0.75, 1].map(f => {
           const y = pad.t + f * chartH
@@ -407,7 +408,8 @@ function BySeverityCard({ logs }: { logs: SuperAdminAuditLog[] }) {
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">By Severity</h3>
+      <h3 className="text-sm font-semibold text-gray-900 mb-1">By Severity</h3>
+      <p className="text-[10px] text-gray-400 mb-3">Severity unavailable — backend provides no severity; all entries shown as Info.</p>
       <div className="space-y-2.5">
         {severityData.map(sev => {
           const Icon = sev.icon
@@ -607,6 +609,7 @@ export default function AuditLogsPage() {
         <StatCard label="Errors" value={errorCount.toString()} trend={`${errorTrend.value} vs last 7 days`} trendUp={!errorTrend.up} color="#EF4444" />
         <StatCard label="Critical" value={criticalCount.toString()} trend={`${criticalTrend.value} vs last 7 days`} trendUp={criticalTrend.up} color="#7F1D1D" />
       </div>
+      <p className="text-[10px] text-gray-400">Severity unavailable — backend provides no severity; all entries shown as Info.</p>
 
       {/* ── Charts Row ──────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

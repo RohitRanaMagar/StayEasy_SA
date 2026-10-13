@@ -75,7 +75,7 @@ function toUiAnnouncement(a: AnnouncementResponse): Announcement {
     status: 'sent',
     sentAt: formatDate(a.created_at),
     createdAt: formatDate(a.created_at),
-    sentCount: 0,
+    sentCount: 0, // no backend counterpart — do not render
   }
 }
 
