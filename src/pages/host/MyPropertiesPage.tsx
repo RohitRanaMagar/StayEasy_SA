@@ -20,6 +20,10 @@ export default function MyPropertiesPage() {
   const [wizardOpen, setWizardOpen] = useState(false)
 
   const fetchProperties = useCallback(async () => {
+    if (!hasStoredToken()) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
     try {

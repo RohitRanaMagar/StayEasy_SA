@@ -353,6 +353,8 @@ export default function HostPortalPageNew() {
         }
 
         case 'branding': {
+          if (propertyId !== null) return true
+
           let coverUrl: string | null = null
           let galleryUrls: string[] = []
 
