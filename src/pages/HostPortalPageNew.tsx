@@ -196,7 +196,8 @@ export default function HostPortalPageNew() {
           })))
         }
         if (draft.brandData) setBrandData({ ...draft.brandData, logo: null })
-        if (draft.propertyId !== undefined) setPropertyId(draft.propertyId)
+        // Never restore propertyId from draft: a fresh wizard run must create
+        // a new property instead of attaching rooms to a stale one.
       } catch {}
     }
     hasRestoredRef.current = true
@@ -222,14 +223,15 @@ export default function HostPortalPageNew() {
           endDate: o.endDate instanceof Date ? o.endDate.toISOString() : o.endDate,
         })),
         brandData: { ...brandData, logo: null },
-        propertyId,
+        // propertyId intentionally omitted: never persist a stale id that a
+        // fresh wizard run could reuse to attach rooms to an old property.
       }
       localStorage.setItem(draftKey, JSON.stringify(draft))
     }, 500)
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     }
-  }, [currentStep, propertyData, locationData, coverIndex, systemAmenityIds, customAmenities, starRating, localizationData, rooms, offers, brandData, propertyId])
+  }, [currentStep, propertyData, locationData, coverIndex, systemAmenityIds, customAmenities, starRating, localizationData, rooms, offers, brandData, draftKey])
 
   const clearDraft = useCallback(() => {
     localStorage.removeItem(draftKey)

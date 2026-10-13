@@ -44,7 +44,7 @@ function readRole(): AuthRole {
 }
 
 function saveAuth(token: string, remember: boolean, role: AuthRole, refreshToken?: string) {
-  const keys = [TOKEN_KEY, REFRESH_KEY, ROLE_KEY, EXPIRY_KEY]
+  const keys = [TOKEN_KEY, REFRESH_KEY, ROLE_KEY, EXPIRY_KEY, 'superAdminToken', 'accessToken', 'userType', 'tempToken']
   keys.forEach((k) => {
     localStorage.removeItem(k)
     sessionStorage.removeItem(k)
@@ -57,7 +57,7 @@ function saveAuth(token: string, remember: boolean, role: AuthRole, refreshToken
 }
 
 function clearAuth() {
-  const keys = [TOKEN_KEY, REFRESH_KEY, ROLE_KEY, EXPIRY_KEY]
+  const keys = [TOKEN_KEY, REFRESH_KEY, ROLE_KEY, EXPIRY_KEY, 'superAdminToken', 'accessToken', 'userType', 'tempToken']
   keys.forEach((k) => {
     localStorage.removeItem(k)
     sessionStorage.removeItem(k)

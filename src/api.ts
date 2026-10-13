@@ -20,6 +20,11 @@ function storageGet(key: string): string | null {
 function updateAccessToken(token: string) {
   if (localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, token)
   else if (sessionStorage.getItem(TOKEN_KEY)) sessionStorage.setItem(TOKEN_KEY, token)
+  // Keep superadmin token mirrors in sync to avoid divergence (interceptor reads `token`)
+  if (localStorage.getItem('superAdminToken')) localStorage.setItem('superAdminToken', token)
+  if (sessionStorage.getItem('superAdminToken')) sessionStorage.setItem('superAdminToken', token)
+  if (localStorage.getItem('accessToken')) localStorage.setItem('accessToken', token)
+  if (sessionStorage.getItem('accessToken')) sessionStorage.setItem('accessToken', token)
 }
 
 function clearAuthStorage() {
