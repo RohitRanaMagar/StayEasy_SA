@@ -1,14 +1,15 @@
 import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   RefreshCw, Download, ChevronLeft, ChevronRight,
   AlertTriangle, XCircle, AlertOctagon, Info,
-  Clock, User, ArrowUpRight, ArrowDownRight,
+  Clock, User, ArrowUpRight, ArrowDownRight, Loader2,
 } from 'lucide-react'
 import { useToast } from '../../components/superadmin/Toast'
 import AdvancedButton from '../../components/superadmin/AdvancedButton'
 import { useAction } from '../../components/superadmin/useAction'
 import { PageTransition } from '../../components/superadmin/Animations'
-import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
+import { listAuditLogs, type AuditLogResponse } from '../../services/superadminApi'
 import type { SuperAdminAuditLog } from '../../types/superadmin'
 
 // ═══════════════════════════════════════════════════════════════
@@ -29,6 +30,42 @@ const severityColors: Record<string, { icon: typeof Info; color: string; bg: str
   warning:  { icon: AlertTriangle, color: '#F59E0B', bg: 'bg-amber-50' },
   error:    { icon: XCircle, color: '#EF4444', bg: 'bg-red-50' },
   critical: { icon: AlertOctagon, color: '#7F1D1D', bg: 'bg-red-100' },
+}
+
+// ─── API mapping (backend AuditLogResponse → UI SuperAdminAuditLog) ───
+// The backend log has no category/severity fields: category is inferred from
+// `target_type` (unknown types → system) and severity defaults to info — so
+// the severity breakdown below reflects available data, not backend severity.
+
+function toUiCategory(targetType: string): SuperAdminAuditLog['category'] {
+  const t = targetType.toLowerCase()
+  if (t.includes('tenant')) return 'tenant'
+  if (t.includes('admin')) return 'admin'
+  if (t.includes('plan') || t.includes('billing') || t.includes('subscription') || t.includes('invoice')) return 'billing'
+  if (t.includes('flag') || t.includes('feature')) return 'feature'
+  if (t.includes('auth') || t.includes('security') || t.includes('login')) return 'security'
+  return 'system'
+}
+
+function formatTimestamp(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+function toUiLog(l: AuditLogResponse): SuperAdminAuditLog {
+  return {
+    id: l.id,
+    timestamp: formatTimestamp(l.created_at),
+    admin: l.actor_email,
+    action: l.action,
+    target: l.target_id ? `${l.target_type}/${l.target_id}` : l.target_type,
+    details: l.details ? JSON.stringify(l.details) : '',
+    category: toUiCategory(l.target_type),
+    severity: 'info',
+    ipAddress: l.ip_address ?? undefined,
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -87,7 +124,7 @@ function LogsOverTimeChart({ logs }: { logs: SuperAdminAuditLog[] }) {
   const chartH = h - pad.t - pad.b
 
   const getPoints = (values: number[]) => values.map((v, i) => ({
-    x: pad.l + (i / (values.length - 1)) * chartW,
+    x: values.length <= 1 ? pad.l + chartW / 2 : pad.l + (i / (values.length - 1)) * chartW,
     y: pad.t + (1 - v / maxVal) * chartH,
   }))
 
@@ -426,9 +463,48 @@ function RecentActivityCard({ logs }: { logs: SuperAdminAuditLog[] }) {
 
 export default function AuditLogsPage() {
   const { showToast } = useToast()
-  const logs = useSuperAdminStore(s => s.auditLogs)
+  const logsQuery = useQuery({
+    queryKey: ['sa-audit-logs'],
+    // Client-side pagination + charts aggregate the fetched set, so fetch a
+    // generous page and slice locally rather than paging per table view.
+    queryFn: () => listAuditLogs({ limit: 100 }),
+  })
+  const logs: SuperAdminAuditLog[] = useMemo(
+    () => (logsQuery.data?.logs ?? []).map(toUiLog),
+    [logsQuery.data],
+  )
+  const isLoading = logsQuery.isLoading
+  const isError = logsQuery.isError
   const refreshAction = useAction({ duration: 800 })
   const exportAction = useAction({ duration: 1200 })
+
+  const handleRefresh = async () => {
+    await refreshAction.execute(async () => {
+      const result = await logsQuery.refetch()
+      if (result.isError) {
+        showToast('error', 'Failed to refresh audit logs')
+      } else {
+        showToast('success', 'Audit logs refreshed')
+      }
+    })
+  }
+
+  const handleExport = async () => {
+    await exportAction.execute(async () => {
+      const header = ['id', 'timestamp', 'admin', 'action', 'target', 'category', 'severity']
+      const rows = logs.map(l => [l.id, l.timestamp, l.admin, l.action, l.target, l.category, l.severity])
+      const csv = [header, ...rows]
+        .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+        .join('\n')
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'audit-logs.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+      showToast('success', 'Audit logs exported')
+    })
+  }
 
   // Calculate stats from actual data
   const totalEntries = logs.length
@@ -479,10 +555,7 @@ export default function AuditLogsPage() {
             loading={refreshAction.loading}
             success={refreshAction.success}
             onClick={async () => {
-              await refreshAction.execute(async () => {
-                await new Promise(r => setTimeout(r, 800))
-                showToast('success', 'Audit logs refreshed')
-              })
+              await handleRefresh()
             }}
           >
             Refresh
@@ -493,16 +566,38 @@ export default function AuditLogsPage() {
             loading={exportAction.loading}
             success={exportAction.success}
             onClick={async () => {
-              await exportAction.execute(async () => {
-                await new Promise(r => setTimeout(r, 1200))
-                showToast('success', 'Audit logs exported')
-              })
+              await handleExport()
             }}
           >
             Export CSV
           </AdvancedButton>
         </div>
       </div>
+
+      {/* ── Content ─────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
+          <Loader2 size={20} className="animate-spin text-[#2E86AB] mx-auto mb-2" />
+          <p className="text-[12px] text-gray-400">Loading audit logs...</p>
+        </div>
+      ) : isError ? (
+        <div className="bg-white rounded-xl border border-red-200 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div className="text-[12px] text-red-600 font-medium">Failed to load audit logs. Check your connection and try again.</div>
+          <button
+            onClick={() => void logsQuery.refetch()}
+            className="px-3 py-1.5 text-[12px] font-medium text-white rounded-lg transition-colors shrink-0"
+            style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}
+          >
+            Retry
+          </button>
+        </div>
+      ) : logs.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-100 p-10 text-center">
+          <div className="text-sm font-semibold text-gray-900 mb-1">No audit logs found</div>
+          <p className="text-[12px] text-gray-400">Admin activity will appear here once it is logged.</p>
+        </div>
+      ) : (
+      <>
 
       {/* ── Stat Cards ──────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -529,6 +624,9 @@ export default function AuditLogsPage() {
         <RecentActivityCard logs={logs} />
       </div>
 
+      </>
+      )}
+
       {/* ── Footer ──────────────────────────────────── */}
       <div className="flex items-center justify-between py-3 border-t border-gray-100">
         <span className="text-[11px] text-gray-400">
@@ -541,10 +639,7 @@ export default function AuditLogsPage() {
             loading={exportAction.loading}
             success={exportAction.success}
             onClick={async () => {
-              await exportAction.execute(async () => {
-                await new Promise(r => setTimeout(r, 1200))
-                showToast('success', 'Audit logs exported')
-              })
+              await handleExport()
             }}
           >
             Export
@@ -555,10 +650,7 @@ export default function AuditLogsPage() {
             loading={refreshAction.loading}
             success={refreshAction.success}
             onClick={async () => {
-              await refreshAction.execute(async () => {
-                await new Promise(r => setTimeout(r, 800))
-                showToast('success', 'Audit logs refreshed')
-              })
+              await handleRefresh()
             }}
           >
             Refresh

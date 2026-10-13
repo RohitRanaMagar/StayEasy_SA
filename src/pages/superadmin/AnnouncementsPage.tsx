@@ -1,14 +1,20 @@
 import { useState, useMemo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Search, Plus, ChevronLeft, ChevronRight,
-  CheckCircle, Clock, Send, Trash2, Eye, X,
+  CheckCircle, Clock, Trash2, Eye, X, Loader2,
 } from 'lucide-react'
-import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { useToast } from '../../components/superadmin/Toast'
 import { PageTransition } from '../../components/superadmin/Animations'
 import NewAnnouncementModal from '../../components/superadmin/NewAnnouncementModal'
-import DeliveryConfirmationPopup from '../../components/superadmin/DeliveryConfirmationPopup'
-import type { AnnouncementTarget } from '../../types/superadmin'
+import {
+  listAnnouncements,
+  createAnnouncement,
+  deleteAnnouncement,
+  type AnnouncementResponse,
+  type CreateAnnouncementRequest,
+} from '../../services/superadminApi'
+import type { Announcement, AnnouncementTarget } from '../../types/superadmin'
 
 const statusConfig: Record<string, { text: string; bg: string; icon: typeof CheckCircle }> = {
   draft: { text: 'Draft', bg: 'bg-gray-100 text-gray-600', icon: Clock },
@@ -25,28 +31,92 @@ const typeConfig: Record<string, { text: string; bg: string }> = {
 
 type AnnouncementStatus = 'draft' | 'scheduled' | 'sent'
 
+function apiErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message
+  return fallback
+}
+
+// ─── API mapping (backend AnnouncementResponse → UI Announcement) ───
+// Backend has no status/type-channel/audience/scheduling fields:
+// - `priority` maps onto the UI `type` badge (unknown values fall back to info).
+// - `target` maps onto the single-element `targetAudience`.
+// - Only email delivery exists server-side; WhatsApp/Telegram are unsupported.
+// - Every stored announcement is effectively sent: status is always 'sent',
+//   and draft/scheduled states have no backend counterpart.
+
+const KNOWN_TYPES = ['info', 'warning', 'maintenance', 'update'] as const
+
+function toUiTarget(target: string): AnnouncementTarget {
+  if (target === 'tenants' || target === 'property_owners' || target === 'hosts' || target === 'admin' || target === 'all') {
+    return target
+  }
+  return 'all'
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function toUiAnnouncement(a: AnnouncementResponse): Announcement {
+  const type = (KNOWN_TYPES as readonly string[]).includes(a.priority) ? a.priority as Announcement['type'] : 'info'
+  const target = toUiTarget(a.target)
+  return {
+    id: a.id,
+    title: a.title,
+    message: a.message,
+    type,
+    target,
+    targetAudience: [target],
+    sendEmail: a.send_email,
+    sendWhatsApp: false,
+    sendTelegram: false,
+    status: 'sent',
+    sentAt: formatDate(a.created_at),
+    createdAt: formatDate(a.created_at),
+    sentCount: 0,
+  }
+}
+
 export default function AnnouncementsPage() {
   const { showToast } = useToast()
-  const announcements = useSuperAdminStore(s => s.announcements)
-  const addAnnouncement = useSuperAdminStore(s => s.addAnnouncement)
-  const sendAnnouncement = useSuperAdminStore(s => s.sendAnnouncement)
-  const deleteAnnouncement = useSuperAdminStore(s => s.deleteAnnouncement)
+  const queryClient = useQueryClient()
+  const announcementsQuery = useQuery({
+    queryKey: ['sa-announcements'],
+    queryFn: () => listAnnouncements(),
+  })
+  const announcements: Announcement[] = useMemo(
+    () => (announcementsQuery.data?.announcements ?? []).map(toUiAnnouncement),
+    [announcementsQuery.data],
+  )
+
+  const invalidateAnnouncements = () => queryClient.invalidateQueries({ queryKey: ['sa-announcements'] })
+
+  const createMut = useMutation({
+    mutationFn: (payload: CreateAnnouncementRequest) => createAnnouncement(payload),
+    onSuccess: () => {
+      void invalidateAnnouncements()
+      showToast('success', 'Announcement sent successfully')
+    },
+    onError: (err) => showToast('error', apiErrorMessage(err, 'Failed to create announcement')),
+  })
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteAnnouncement(id),
+    onSuccess: () => {
+      void invalidateAnnouncements()
+      showToast('success', 'Announcement deleted')
+    },
+    onError: (err) => showToast('error', apiErrorMessage(err, 'Failed to delete announcement')),
+  })
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<AnnouncementStatus | 'all'>('all')
   const [page, setPage] = useState(0)
   const perPage = 8
 
-  const [previewAnn, setPreviewAnn] = useState<typeof announcements[0] | null>(null)
+  const [previewAnn, setPreviewAnn] = useState<Announcement | null>(null)
   const [showNewModal, setShowNewModal] = useState(false)
-  const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false)
-  const [lastSentData, setLastSentData] = useState<{
-    title: string
-    targetAudience: AnnouncementTarget[]
-    channels: { email: boolean; whatsapp: boolean; telegram: boolean }
-    recipientCount: number
-    sentAt: string
-  } | null>(null)
 
   const filtered = useMemo(() => {
     let result = [...announcements]
@@ -67,18 +137,10 @@ export default function AnnouncementsPage() {
   const stats = {
     total: announcements.length,
     sent: announcements.filter(a => a.status === 'sent').length,
-    draft: announcements.filter(a => a.status === 'draft').length,
-    scheduled: announcements.filter(a => a.status === 'scheduled').length,
-  }
-
-  const handleSend = (id: string) => {
-    sendAnnouncement(id)
-    showToast('success', 'Announcement sent')
   }
 
   const handleDelete = (id: string) => {
-    deleteAnnouncement(id)
-    showToast('success', 'Announcement deleted')
+    deleteMut.mutate(id)
   }
 
   const handleNewAnnouncement = (data: {
@@ -93,29 +155,35 @@ export default function AnnouncementsPage() {
     status: 'sent' | 'draft' | 'scheduled'
     scheduledAt?: string
   }) => {
-    addAnnouncement(data)
-    setShowNewModal(false)
-
-    if (data.status === 'sent') {
-      const now = new Date()
-      const sentAt = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
-        ' ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-
-      setLastSentData({
-        title: data.title,
-        targetAudience: data.targetAudience,
-        channels: { email: data.sendEmail, whatsapp: data.sendWhatsApp, telegram: data.sendTelegram },
-        recipientCount: 10,
-        sentAt,
-      })
-      setShowDeliveryConfirm(true)
-      showToast('success', 'Announcement sent successfully')
-    } else if (data.status === 'scheduled') {
-      showToast('success', `Announcement scheduled for ${data.scheduledAt}`)
-    } else {
-      showToast('success', 'Announcement saved as draft')
+    // The backend creates announcements as immediately-sent records: it has
+    // no draft/scheduled states, so those requests cannot be persisted.
+    if (data.status !== 'sent') {
+      showToast('error', 'Drafts and scheduling are not supported by the backend — announcement not saved')
+      return
     }
+    setShowNewModal(false)
+    createMut.mutate(
+      {
+        title: data.title,
+        message: data.message,
+        priority: data.type,
+        target: data.targetAudience.length === 1 ? data.targetAudience[0] : 'all',
+        send_email: data.sendEmail,
+      },
+      {
+        onSuccess: () => {
+          // WhatsApp/Telegram delivery has no backend counterpart — only the
+          // email flag is persisted, so say so instead of silently dropping it.
+          if (data.sendWhatsApp || data.sendTelegram) {
+            showToast('info', 'Note: only email delivery is supported by the backend')
+          }
+        },
+      },
+    )
   }
+
+  const isLoading = announcementsQuery.isLoading
+  const isError = announcementsQuery.isError
 
   return (
     <PageTransition>
@@ -123,10 +191,10 @@ export default function AnnouncementsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
-          <button onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 px-4 py-2 text-white text-[12px] font-medium rounded-lg sm:ml-auto"
+          <button onClick={() => setShowNewModal(true)} disabled={createMut.isPending}
+            className="flex items-center gap-2 px-4 py-2 text-white text-[12px] font-medium rounded-lg sm:ml-auto disabled:opacity-60"
             style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
-            <Plus size={14} /> New Announcement
+            {createMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} New Announcement
           </button>
         </div>
 
@@ -134,19 +202,21 @@ export default function AnnouncementsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <p className="text-[11px] text-gray-400 uppercase tracking-wider">Total</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{isLoading ? '—' : stats.total}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <p className="text-[11px] text-gray-400 uppercase tracking-wider">Sent</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">{stats.sent}</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">{isLoading ? '—' : stats.sent}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <p className="text-[11px] text-gray-400 uppercase tracking-wider">Draft</p>
-            <p className="text-2xl font-bold text-gray-500 mt-1">{stats.draft}</p>
+            <p className="text-2xl font-bold text-gray-500 mt-1">—</p>
+            <p className="text-[9px] text-gray-300 mt-0.5">Unavailable — no backend status</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <p className="text-[11px] text-gray-400 uppercase tracking-wider">Scheduled</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">{stats.scheduled}</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">—</p>
+            <p className="text-[9px] text-gray-300 mt-0.5">Unavailable — no backend status</p>
           </div>
         </div>
 
@@ -186,12 +256,26 @@ export default function AnnouncementsPage() {
                 </tr>
               </thead>
               <tbody>
-                {paged.length === 0 ? (
+                {isLoading ? (
+                  <tr><td colSpan={7} className="py-12 text-center">
+                    <Loader2 size={20} className="animate-spin text-[#2E86AB] mx-auto mb-2" />
+                    <p className="text-[12px] text-gray-400">Loading announcements...</p>
+                  </td></tr>
+                ) : isError ? (
+                  <tr><td colSpan={7} className="py-12 text-center">
+                    <p className="text-[12px] text-red-600 font-medium mb-3">Failed to load announcements. Check your connection and try again.</p>
+                    <button onClick={() => void announcementsQuery.refetch()}
+                      className="px-4 py-2 text-[12px] font-medium text-white rounded-lg"
+                      style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
+                      Retry
+                    </button>
+                  </td></tr>
+                ) : paged.length === 0 ? (
                   <tr><td colSpan={7} className="text-center py-12 text-[12px] text-gray-400">No announcements found</td></tr>
                 ) : paged.map(ann => {
                   const s = statusConfig[ann.status]
                   const t = typeConfig[ann.type]
-                  const channels = [ann.sendEmail ? 'Email' : null, ann.sendWhatsApp ? 'WhatsApp' : null, ann.sendTelegram ? 'Telegram' : null].filter(Boolean).join(', ')
+                  const channels = [ann.sendEmail ? 'Email' : null].filter(Boolean).join(', ') || '—'
                   return (
                     <tr key={ann.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <td className="px-4 py-3">
@@ -213,18 +297,10 @@ export default function AnnouncementsPage() {
                             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600">
                             <Eye size={14} />
                           </button>
-                          {ann.status === 'draft' && (
-                            <button onClick={() => handleSend(ann.id)}
-                              className="p-1.5 rounded-lg hover:bg-green-50 text-gray-400 hover:text-green-600">
-                              <Send size={14} />
-                            </button>
-                          )}
-                          {ann.status === 'draft' && (
-                            <button onClick={() => handleDelete(ann.id)}
-                              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600">
-                              <Trash2 size={14} />
-                            </button>
-                          )}
+                          <button onClick={() => handleDelete(ann.id)} disabled={deleteMut.isPending}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 disabled:opacity-40">
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -278,9 +354,9 @@ export default function AnnouncementsPage() {
                 <p className="text-[13px] text-gray-600 whitespace-pre-wrap">{previewAnn.message}</p>
                 <div className="text-[11px] text-gray-400 space-y-1 pt-2 border-t border-gray-100">
                   <p>Target: <span className="text-gray-600 capitalize">{previewAnn.targetAudience?.join(', ') || previewAnn.target}</span></p>
-                  <p>Channels: <span className="text-gray-600">
-                    {[previewAnn.sendEmail ? 'Email' : null, previewAnn.sendWhatsApp ? 'WhatsApp' : null, previewAnn.sendTelegram ? 'Telegram' : null].filter(Boolean).join(', ')}
-                  </span></p>
+                  <p>Channels: <span className="text-gray-600">{previewAnn.sendEmail ? 'Email' : '—'}</span>
+                    <span className="text-gray-300"> (WhatsApp/Telegram unsupported by backend)</span>
+                  </p>
                   <p>Created: <span className="text-gray-600">{previewAnn.createdAt}</span></p>
                   {previewAnn.sentAt && <p>Sent: <span className="text-gray-600">{previewAnn.sentAt}</span></p>}
                 </div>
@@ -301,19 +377,6 @@ export default function AnnouncementsPage() {
           onClose={() => setShowNewModal(false)}
           onSend={handleNewAnnouncement}
         />
-
-        {/* Delivery Confirmation Popup */}
-        {lastSentData && (
-          <DeliveryConfirmationPopup
-            open={showDeliveryConfirm}
-            onClose={() => { setShowDeliveryConfirm(false); setLastSentData(null) }}
-            title={lastSentData.title}
-            targetAudience={lastSentData.targetAudience}
-            channels={lastSentData.channels}
-            recipientCount={lastSentData.recipientCount}
-            sentAt={lastSentData.sentAt}
-          />
-        )}
       </div>
     </PageTransition>
   )

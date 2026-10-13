@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   Search, Filter, ChevronLeft, ChevronRight, Plus,
   CheckCircle, XCircle, AlertCircle, Clock, RefreshCw, Download,
   DollarSign, Users, BarChart3, TrendingUp, Ban, Play,
-  FileText, Mail, X, CreditCard,
+  FileText, Mail, X, CreditCard, Loader2,
 } from 'lucide-react'
 import { useToast } from '../../components/superadmin/Toast'
 import AdvancedButton, { ConfirmDialog, ActionMenu, ExportButton } from '../../components/superadmin/AdvancedButton'
@@ -12,7 +13,22 @@ import { useAction } from '../../components/superadmin/useAction'
 import type { Subscription, BillingInvoice } from '../../types/superadmin'
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition } from '../../components/superadmin/Animations'
+import { listPlans, type PlanResponse } from '../../services/superadminApi'
 
+// NOTE: only the plan catalog on this page is wired to the live API
+// (GET /superadmin/plans). Per-tenant subscription rows, invoices, stats, and
+// assign/upgrade/cancel actions STAY on mock store data because no superadmin
+// tenant-list endpoint exists to source them from.
+
+interface LivePlan {
+  id: string
+  name: string
+  monthlyPrice: number
+}
+
+function toLivePlan(p: PlanResponse): LivePlan {
+  return { id: p.id, name: p.name, monthlyPrice: Number(p.price_monthly) || 0 }
+}
 // ═══════════════════════════════════════════════════════════════
 // Utility
 // ═══════════════════════════════════════════════════════════════
@@ -377,31 +393,52 @@ function SubscriptionStats({ subscriptions, invoices }: { subscriptions: Subscri
 // Plan Distribution
 // ═══════════════════════════════════════════════════════════════
 
-function PlanDistribution() {
+function PlanDistribution({ plans, isLoading, isError, onRetry }: {
+  plans: LivePlan[]
+  isLoading: boolean
+  isError: boolean
+  onRetry: () => void
+}) {
   const navigate = useNavigate()
-  const storePlans = useSuperAdminStore(s => s.plans)
-  const planCounts = storePlans.filter(p => p.status === 'active').map(p => ({ name: p.name, count: p.activeSubscribers, color: planColorMap[p.name] || '#6B7280' }))
-  const maxCount = Math.max(...planCounts.map(p => p.count))
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4">
       <h3 className="text-sm font-semibold text-gray-900 mb-3">Plan Distribution</h3>
+      {isLoading ? (
+        <div className="py-8 text-center">
+          <Loader2 size={18} className="animate-spin text-[#2E86AB] mx-auto mb-2" />
+          <p className="text-[11px] text-gray-400">Loading plans...</p>
+        </div>
+      ) : isError ? (
+        <div className="py-8 text-center">
+          <p className="text-[11px] text-red-600 font-medium mb-3">Failed to load plans.</p>
+          <button onClick={onRetry}
+            className="px-3 py-1.5 text-[11px] font-medium text-white rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
+            Retry
+          </button>
+        </div>
+      ) : plans.length === 0 ? (
+        <div className="py-8 text-center text-[11px] text-gray-400">No plans found</div>
+      ) : (
       <div className="space-y-3">
-        {planCounts.map(plan => (
-          <div key={plan.name}>
+        {plans.map(plan => (
+          <div key={plan.id}>
             <div className="flex items-center justify-between text-[11px] mb-1">
               <span className="text-gray-600 font-medium">{plan.name}</span>
-              <span className="text-gray-800 font-semibold">{plan.count}</span>
+              <span className="text-gray-300 font-semibold">—</span>
             </div>
             <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${(plan.count / maxCount) * 100}%`, background: plan.color }} />
+              <div className="h-full rounded-full bg-gray-200"
+                style={{ width: '100%' }} />
             </div>
           </div>
         ))}
+        <p className="text-[9px] text-gray-300">Subscriber counts unavailable — no backend data</p>
       </div>
+      )}
       <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between text-[10px] text-gray-400">
-        <span>Total: {storePlans.reduce((s, p) => s + p.activeSubscribers, 0)} subscribers</span>
+        <span>Total: — subscribers</span>
         <AdvancedButton variant="ghost" size="sm" onClick={() => navigate('/superadmin/plans')}>
           View details →
         </AdvancedButton>
@@ -448,7 +485,16 @@ export default function SubscriptionsPage() {
   const store = useSuperAdminStore()
   const subscriptions = useSuperAdminStore(s => s.subscriptions)
   const billingInvoicesData = useSuperAdminStore(s => s.billingInvoices)
-  const plans = useSuperAdminStore(s => s.plans)
+  // Live plan catalog; everything else on this page stays on mock store data
+  // (no superadmin tenant-list endpoint exists — see note at top of file).
+  const plansQuery = useQuery({
+    queryKey: ['sa-plans'],
+    queryFn: () => listPlans({ include_inactive: true }),
+  })
+  const plans: LivePlan[] = useMemo(
+    () => (plansQuery.data?.plans ?? []).map(toLivePlan),
+    [plansQuery.data],
+  )
   const cancelSubscription = useSuperAdminStore(s => s.cancelSubscription)
   const [activeTab, setActiveTab] = useState<'subscriptions' | 'invoices'>('subscriptions')
   const [selectedSub, setSelectedSub] = useState<Subscription | null>(null)
@@ -544,7 +590,12 @@ export default function SubscriptionsPage() {
 
         {/* Sidebar */}
         <div className="xl:col-span-1 space-y-4">
-          <PlanDistribution />
+          <PlanDistribution
+            plans={plans}
+            isLoading={plansQuery.isLoading}
+            isError={plansQuery.isError}
+            onRetry={() => void plansQuery.refetch()}
+          />
 
           {/* Quick Actions */}
           <div className="bg-white rounded-xl border border-gray-100 p-4">
@@ -644,6 +695,8 @@ export default function SubscriptionsPage() {
                 </div>
                 <div><label className="text-[10px] text-gray-400 font-medium">Plan</label>
                   <select className="w-full mt-1 px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-blue-300 text-gray-700">
+                    {plansQuery.isLoading && <option>Loading plans...</option>}
+                    {plansQuery.isError && <option>Failed to load plans</option>}
                     {plans.map(p => <option key={p.id}>{p.name} (${p.monthlyPrice}/mo)</option>)}
                   </select>
                 </div>

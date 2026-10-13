@@ -1,14 +1,63 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Users, Shield, Search, ChevronRight,
   CheckCircle, XCircle, Clock, Mail, UserPlus,
-  MoreHorizontal, Edit,
+  MoreHorizontal, Edit, Loader2, Trash2,
 } from 'lucide-react'
-import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
+import { useToast } from '../../components/superadmin/Toast'
 import { PageTransition } from '../../components/superadmin/Animations'
+import {
+  listAdmins,
+  createAdmin,
+  deleteAdmin,
+  type AdminResponse,
+  type CreateAdminRequest,
+} from '../../services/superadminApi'
 import type { AdminUser, AdminRole } from '../../types/superadmin'
 
 const adminRoles: AdminRole[] = []
+
+function apiErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message
+  return fallback
+}
+
+// ─── API mapping (backend AdminResponse → UI AdminUser) ───
+// The backend admin has no display-name split, role enum, permissions, MFA
+// flag, or last-active timestamp: name comes from `full_name`, role is the
+// raw backend string mapped case-insensitively (unknown → Admin), status is
+// derived from `is_active`, and lastActive / permissions / MFA render as
+// honest unavailable states below.
+
+function toUiRole(role: string): AdminUser['role'] {
+  const r = role.toLowerCase().replace(/[\s_-]/g, '')
+  if (r === 'superadmin') return 'SuperAdmin'
+  if (r === 'admin') return 'Admin'
+  if (r === 'support') return 'Support'
+  if (r === 'readonly') return 'ReadOnly'
+  return 'Admin'
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function toUiAdmin(a: AdminResponse): AdminUser {
+  return {
+    id: a.id,
+    name: a.full_name,
+    email: a.email,
+    role: toUiRole(a.role),
+    status: a.is_active ? 'active' : 'inactive',
+    lastActive: '—',
+    joinedAt: formatDate(a.created_at),
+    permissions: [],
+    mfaEnabled: false,
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════
 // Utility
@@ -39,7 +88,13 @@ const categoryColors: Record<string, string> = {
 // Admin Detail Modal
 // ═══════════════════════════════════════════════════════════════
 
-function AdminDetailModal({ admin, open, onClose }: { admin: AdminUser | null; open: boolean; onClose: () => void }) {
+function AdminDetailModal({ admin, open, onClose, onDelete, isDeleting }: {
+  admin: AdminUser | null
+  open: boolean
+  onClose: () => void
+  onDelete: (id: string) => void
+  isDeleting: boolean
+}) {
   if (!open || !admin) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
@@ -66,7 +121,8 @@ function AdminDetailModal({ admin, open, onClose }: { admin: AdminUser | null; o
             </div>
             <div className="bg-gray-50 rounded-lg p-2.5">
               <div className="text-[10px] text-gray-400">Last Active</div>
-              <div className="text-xs font-medium text-gray-700">{admin.lastActive}</div>
+              <div className="text-xs font-medium text-gray-700">—</div>
+              <div className="text-[9px] text-gray-300">Unavailable — no backend data</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-2.5">
               <div className="text-[10px] text-gray-400">Joined</div>
@@ -76,12 +132,24 @@ function AdminDetailModal({ admin, open, onClose }: { admin: AdminUser | null; o
 
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] text-gray-400 font-medium">Permissions</span>
-            {admin.mfaEnabled && <span className="text-[9px] text-emerald-600 font-medium">✓ MFA Enabled</span>}
           </div>
-          <div className="flex flex-wrap gap-1">
-            {admin.permissions.map(p => (
-              <span key={p} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">{p}</span>
-            ))}
+          {admin.permissions.length === 0 ? (
+            <p className="text-[10px] text-gray-300">— Unavailable — backend exposes no permission data</p>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {admin.permissions.map(p => (
+                <span key={p} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">{p}</span>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 mt-4 justify-end">
+            <button onClick={onClose} className="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Close</button>
+            <button onClick={() => onDelete(admin.id)} disabled={isDeleting}
+              className="px-4 py-2 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-60">
+              {isDeleting ? <Loader2 size={12} className="animate-spin inline mr-1" /> : <Trash2 size={12} className="inline mr-1" />}
+              Delete
+            </button>
           </div>
         </div>
       </div>
@@ -93,8 +161,17 @@ function AdminDetailModal({ admin, open, onClose }: { admin: AdminUser | null; o
 // Invite Admin Modal
 // ═══════════════════════════════════════════════════════════════
 
-function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function InviteModal({ open, onClose, onInvite, isPending }: {
+  open: boolean
+  onClose: () => void
+  onInvite: (data: CreateAdminRequest) => void
+  isPending: boolean
+}) {
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   if (!open) return null
+  const isValid = fullName.trim() && email.trim() && password
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl border border-gray-100 w-full max-w-md" onClick={e => e.stopPropagation()}>
@@ -107,29 +184,47 @@ function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           </div>
           <div className="space-y-3">
             <div>
+              <label className="text-[10px] text-gray-400 font-medium">Full Name</label>
+              <input value={fullName} onChange={e => setFullName(e.target.value)} type="text" placeholder="Jane Doe"
+                className="w-full mt-1 px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-purple-300" />
+            </div>
+            <div>
               <label className="text-[10px] text-gray-400 font-medium">Email Address</label>
-              <input type="email" placeholder="admin@example.com"
+              <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="admin@example.com"
+                className="w-full mt-1 px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-purple-300" />
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-400 font-medium">Temporary Password</label>
+              <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Set an initial password"
                 className="w-full mt-1 px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-purple-300" />
             </div>
             <div>
               <label className="text-[10px] text-gray-400 font-medium">Role</label>
-              <select className="w-full mt-1 px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-purple-300 text-gray-700">
-                <option>Admin</option>
-                <option>Support</option>
-                <option>Read-Only</option>
+              <select disabled title="Roles cannot be set via the backend API"
+                className="w-full mt-1 px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none bg-gray-50 text-gray-400 cursor-not-allowed">
+                <option>Admin (default — roles cannot be set via API)</option>
               </select>
+              <p className="text-[9px] text-gray-300 mt-1">Unavailable — create-admin endpoint accepts no role field</p>
             </div>
             <div>
               <label className="text-[10px] text-gray-400 font-medium">Message (optional)</label>
-              <textarea rows={3} placeholder="Add a personal message..."
-                className="w-full mt-1 px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-purple-300 resize-none" />
+              <textarea rows={3} disabled placeholder="Not supported by the backend"
+                className="w-full mt-1 px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none bg-gray-50 text-gray-400 cursor-not-allowed resize-none" />
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4 justify-end">
             <button onClick={onClose} className="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
-            <button className="px-4 py-2 text-xs font-semibold text-white rounded-lg transition-colors"
+            <button disabled={!isValid || isPending}
+              onClick={() => {
+                onInvite({ email: email.trim(), full_name: fullName.trim(), password })
+                setFullName('')
+                setEmail('')
+                setPassword('')
+              }}
+              className="px-4 py-2 text-xs font-semibold text-white rounded-lg transition-colors disabled:opacity-60"
               style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
-              <Mail size={12} className="inline mr-1" /> Send Invite
+              {isPending ? <Loader2 size={12} className="animate-spin inline mr-1" /> : <Mail size={12} className="inline mr-1" />}
+              Send Invite
             </button>
           </div>
         </div>
@@ -186,7 +281,42 @@ function RoleCard({ role }: { role: AdminRole }) {
 // ═══════════════════════════════════════════════════════════════
 
 export default function AdminsRolesPage() {
-  const storeAdmins = useSuperAdminStore(s => s.adminUsers)
+  const { showToast } = useToast()
+  const queryClient = useQueryClient()
+  const adminsQuery = useQuery({
+    queryKey: ['sa-admins'],
+    queryFn: () => listAdmins(),
+  })
+  const storeAdmins: AdminUser[] = useMemo(
+    () => (adminsQuery.data?.admins ?? []).map(toUiAdmin),
+    [adminsQuery.data],
+  )
+
+  const invalidateAdmins = () => queryClient.invalidateQueries({ queryKey: ['sa-admins'] })
+
+  const createMut = useMutation({
+    mutationFn: (payload: CreateAdminRequest) => createAdmin(payload),
+    onSuccess: () => {
+      void invalidateAdmins()
+      setShowInvite(false)
+      showToast('success', 'Admin invited successfully')
+    },
+    onError: (err) => showToast('error', apiErrorMessage(err, 'Failed to invite admin')),
+  })
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteAdmin(id),
+    onSuccess: () => {
+      void invalidateAdmins()
+      setSelectedAdmin(null)
+      showToast('success', 'Admin deleted')
+    },
+    onError: (err) => showToast('error', apiErrorMessage(err, 'Failed to delete admin')),
+  })
+
+  // NOTE: the backend exposes no per-admin audit or impersonate UI on this
+  // page, so getAdminAudit / impersonateAdmin are intentionally not wired
+  // (no new UI affordances added).
+
   const [activeTab, setActiveTab] = useState<'admins' | 'roles'>('admins')
   const [search, setSearch] = useState('')
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null)
@@ -196,6 +326,9 @@ export default function AdminsRolesPage() {
     u.name.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase())
   )
+
+  const isLoading = adminsQuery.isLoading
+  const isError = adminsQuery.isError
 
   return (
     <PageTransition>
@@ -217,32 +350,32 @@ export default function AdminsRolesPage() {
             <Users size={13} className="text-[#2E86AB]" />
             <span className="text-[9px] text-gray-400 uppercase tracking-wider font-medium">Total Admins</span>
           </div>
-          <div className="text-lg font-bold text-gray-900">{storeAdmins.length}</div>
-          <div className="text-[9px] text-gray-400 mt-0.5">{storeAdmins.filter(u => u.status === 'active').length} active</div>
+          <div className="text-lg font-bold text-gray-900">{isLoading ? '—' : storeAdmins.length}</div>
+          <div className="text-[9px] text-gray-400 mt-0.5">{isLoading ? '…' : `${storeAdmins.filter(u => u.status === 'active').length} active`}</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-100 p-3">
           <div className="flex items-center gap-2 mb-1">
             <Shield size={13} className="text-[#8B5CF6]" />
             <span className="text-[9px] text-gray-400 uppercase tracking-wider font-medium">Roles</span>
           </div>
-          <div className="text-lg font-bold text-gray-900">{adminRoles.length}</div>
-          <div className="text-[9px] text-gray-400 mt-0.5">Permission sets</div>
+          <div className="text-lg font-bold text-gray-900">—</div>
+          <div className="text-[9px] text-gray-300 mt-0.5">Unavailable — no backend roles endpoint</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-100 p-3">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle size={13} className="text-emerald-500" />
             <span className="text-[9px] text-gray-400 uppercase tracking-wider font-medium">MFA Enabled</span>
           </div>
-          <div className="text-lg font-bold text-gray-900">{storeAdmins.filter(u => u.mfaEnabled).length}</div>
-          <div className="text-[9px] text-gray-400 mt-0.5">Of {storeAdmins.length} admins</div>
+          <div className="text-lg font-bold text-gray-900">—</div>
+          <div className="text-[9px] text-gray-300 mt-0.5">Unavailable — no backend data</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-100 p-3">
           <div className="flex items-center gap-2 mb-1">
             <Clock size={13} className="text-[#F59E0B]" />
             <span className="text-[9px] text-gray-400 uppercase tracking-wider font-medium">Pending Invites</span>
           </div>
-          <div className="text-lg font-bold text-gray-900">{storeAdmins.filter(u => u.status === 'invited').length}</div>
-          <div className="text-[9px] text-gray-400 mt-0.5">Awaiting response</div>
+          <div className="text-lg font-bold text-gray-900">—</div>
+          <div className="text-[9px] text-gray-300 mt-0.5">Unavailable — no backend invite state</div>
         </div>
       </div>
 
@@ -250,7 +383,7 @@ export default function AdminsRolesPage() {
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 w-fit">
         <button onClick={() => setActiveTab('admins')}
           className={`px-3 py-1.5 text-[11px] font-medium rounded-md transition-all ${activeTab === 'admins' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
-          <Users size={12} className="inline mr-1.5" />Admins ({storeAdmins.length})
+          <Users size={12} className="inline mr-1.5" />Admins ({isLoading ? '…' : storeAdmins.length})
         </button>
         <button onClick={() => setActiveTab('roles')}
           className={`px-3 py-1.5 text-[11px] font-medium rounded-md transition-all ${activeTab === 'roles' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
@@ -273,6 +406,23 @@ export default function AdminsRolesPage() {
               </button>
             </div>
           </div>
+          {isLoading ? (
+            <div className="py-12 text-center">
+              <Loader2 size={20} className="animate-spin text-[#2E86AB] mx-auto mb-2" />
+              <p className="text-[12px] text-gray-400">Loading admins...</p>
+            </div>
+          ) : isError ? (
+            <div className="py-12 text-center">
+              <p className="text-[12px] text-red-600 font-medium mb-3">Failed to load admins. Check your connection and try again.</p>
+              <button onClick={() => void adminsQuery.refetch()}
+                className="px-4 py-2 text-[12px] font-medium text-white rounded-lg"
+                style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}>
+                Retry
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-12 text-center text-[12px] text-gray-400">No admins found</div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-[11px]">
               <thead>
@@ -306,13 +456,10 @@ export default function AdminsRolesPage() {
                     <td className="py-2.5 px-3">
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${statusColors[admin.status]}`}>{admin.status}</span>
                     </td>
-                    <td className="py-2.5 px-3">
-                      {admin.mfaEnabled
-                        ? <CheckCircle size={13} className="text-emerald-500" />
-                        : <XCircle size={13} className="text-gray-300" />
-                      }
+                    <td className="py-2.5 px-3" title="MFA status unavailable — no backend data">
+                      <XCircle size={13} className="text-gray-300" />
                     </td>
-                    <td className="py-2.5 px-3 text-[10px] text-gray-500">{admin.lastActive}</td>
+                    <td className="py-2.5 px-3 text-[10px] text-gray-300">—</td>
                     <td className="py-2.5 px-3 text-[10px] text-gray-400">{admin.joinedAt}</td>
                     <td className="py-2.5 px-3 text-right" onClick={e => e.stopPropagation()}>
                       <button className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600">
@@ -327,21 +474,40 @@ export default function AdminsRolesPage() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
 
       {/* Roles Tab */}
       {activeTab === 'roles' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          {adminRoles.map(role => (
-            <RoleCard key={role.id} role={role} />
-          ))}
-        </div>
+        adminRoles.length === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-100 p-10 text-center">
+            <div className="text-sm font-semibold text-gray-900 mb-1">No roles found</div>
+            <p className="text-[12px] text-gray-400">— Unavailable — the backend exposes no roles endpoint.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {adminRoles.map(role => (
+              <RoleCard key={role.id} role={role} />
+            ))}
+          </div>
+        )
       )}
 
       {/* Modals */}
-      <AdminDetailModal admin={selectedAdmin} open={selectedAdmin !== null} onClose={() => setSelectedAdmin(null)} />
-      <InviteModal open={showInvite} onClose={() => setShowInvite(false)} />
+      <AdminDetailModal
+        admin={selectedAdmin}
+        open={selectedAdmin !== null}
+        onClose={() => setSelectedAdmin(null)}
+        onDelete={(id) => deleteMut.mutate(id)}
+        isDeleting={deleteMut.isPending}
+      />
+      <InviteModal
+        open={showInvite}
+        onClose={() => setShowInvite(false)}
+        onInvite={(payload) => createMut.mutate(payload)}
+        isPending={createMut.isPending}
+      />
     </div>
     </PageTransition>
   )
