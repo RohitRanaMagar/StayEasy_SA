@@ -57,6 +57,13 @@ async function refreshAccessToken(): Promise<string> {
 }
 
 function redirectToLogin() {
+  // A 401 raised BY a login page (e.g. bad credentials) must not bounce to a
+  // different login page — stay put so the form can show its error.
+  const path = window.location.pathname
+  if (path === '/login' || path === '/host/login' || path === '/superadmin/login') {
+    clearAuthStorage()
+    return
+  }
   const userType = storageGet('userType')
   const role = storageGet(ROLE_KEY)
   clearAuthStorage()
