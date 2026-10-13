@@ -1,15 +1,88 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Package, Check, X, Plus, Edit, Archive, DollarSign,
   Users, Home, Layers, Loader2, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useToast } from '../../components/superadmin/Toast'
-import type { Plan, PlanChangeLog } from '../../types/superadmin'
+import type { Plan, PlanChangeLog, PlanFeature } from '../../types/superadmin'
+import {
+  listPlans,
+  createPlan,
+  updatePlan,
+  deletePlan,
+  type PlanResponse,
+  type CreatePlanRequest,
+} from '../../services/superadminApi'
 
 const planChangeLogs: PlanChangeLog[] = []
-import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition } from '../../components/superadmin/Animations'
+
+// ═══════════════════════════════════════════════════════════════
+// API mapping (backend PlanResponse → UI Plan)
+// The backend plan has no description / popular / color /
+// subscriber-count fields, so those map to honest defaults.
+// ═══════════════════════════════════════════════════════════════
+
+const PLAN_COLORS = ['#2E86AB', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6']
+
+function planColorFor(id: string): string {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+  return PLAN_COLORS[hash % PLAN_COLORS.length]
+}
+
+function toPlanFeatures(features: PlanResponse['features']): PlanFeature[] {
+  if (!features || typeof features !== 'object') return []
+  return Object.entries(features).map(([name, value]) => {
+    if (typeof value === 'boolean') return { name, included: value }
+    if (typeof value === 'string' || typeof value === 'number') {
+      return { name, included: true, limit: String(value) }
+    }
+    if (value && typeof value === 'object') {
+      const v = value as Record<string, unknown>
+      return {
+        name,
+        included: typeof v.included === 'boolean' ? v.included : true,
+        limit: typeof v.limit === 'string' ? v.limit : undefined,
+      }
+    }
+    return { name, included: Boolean(value) }
+  })
+}
+
+function toUiPlan(p: PlanResponse): Plan {
+  const monthlyPrice = Number(p.price_monthly) || 0
+  const yearlyPrice = p.price_yearly != null ? Number(p.price_yearly) || 0 : 0
+  let createdAt = p.created_at
+  const parsed = new Date(p.created_at)
+  if (!Number.isNaN(parsed.getTime())) {
+    createdAt = parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    description: '',
+    monthlyPrice,
+    yearlyPrice,
+    popular: false,
+    color: planColorFor(p.id),
+    features: toPlanFeatures(p.features),
+    maxProperties: p.max_properties,
+    maxRooms: p.max_rooms_per_property,
+    maxUsers: p.max_staff,
+    activeSubscribers: 0,
+    status: p.is_active ? 'active' : 'archived',
+    createdAt,
+  }
+}
+
+function apiErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message
+  return fallback
+}
 
 // ═══════════════════════════════════════════════════════════════
 // Utility
@@ -199,7 +272,7 @@ function PlanCard({ plan, onEdit, onArchive, isActive }: { plan: Plan; onEdit: (
 // Plan Editor Modal
 // ═══════════════════════════════════════════════════════════════
 
-function PlanEditorModal({ plan, onClose, onSave }: { plan: Plan | null; onClose: () => void; onSave?: (p: Plan, data: Partial<Plan>) => void }) {
+function PlanEditorModal({ plan, onClose, onSave }: { plan: Plan | null; onClose: () => void; onSave?: (p: Plan, data: Partial<Plan>) => void | Promise<void> }) {
   const [saving, setSaving] = useState(false)
   const [name, setName] = useState(plan?.name || '')
   const [desc, setDesc] = useState(plan?.description || '')
@@ -211,10 +284,14 @@ function PlanEditorModal({ plan, onClose, onSave }: { plan: Plan | null; onClose
 
   const handleSave = async () => {
     setSaving(true)
-    await new Promise(r => setTimeout(r, 500))
-    onSave?.(plan, { name, description: desc, monthlyPrice, yearlyPrice, maxProperties: maxProps })
-    setSaving(false)
-    onClose()
+    try {
+      await onSave?.(plan, { name, description: desc, monthlyPrice, yearlyPrice, maxProperties: maxProps })
+      onClose()
+    } catch {
+      // Parent mutation already toasted the error; keep the modal open.
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -384,10 +461,45 @@ function PlanChangeLogSection() {
 
 export default function PlansPage() {
   const { showToast } = useToast()
-  const plans = useSuperAdminStore(s => s.plans)
-  const updatePlan = useSuperAdminStore(s => s.updatePlan)
-  const archivePlan = useSuperAdminStore(s => s.archivePlan)
-  const addPlan = useSuperAdminStore(s => s.addPlan)
+  const queryClient = useQueryClient()
+  const plansQuery = useQuery({
+    queryKey: ['sa-plans'],
+    queryFn: () => listPlans({ include_inactive: true }),
+  })
+  const plans: Plan[] = useMemo(
+    () => (plansQuery.data?.plans ?? []).map(toUiPlan),
+    [plansQuery.data],
+  )
+
+  const invalidatePlans = () => queryClient.invalidateQueries({ queryKey: ['sa-plans'] })
+
+  const createMut = useMutation({
+    mutationFn: (payload: CreatePlanRequest) => createPlan(payload),
+    onSuccess: () => {
+      void invalidatePlans()
+      showToast('success', 'New plan created')
+    },
+    onError: (err) => showToast('error', apiErrorMessage(err, 'Failed to create plan')),
+  })
+  const updateMut = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof updatePlan>[1] }) =>
+      updatePlan(id, payload),
+    onSuccess: () => {
+      void invalidatePlans()
+      showToast('success', 'Plan updated successfully')
+    },
+    onError: (err) => showToast('error', apiErrorMessage(err, 'Failed to update plan')),
+  })
+  const deactivateMut = useMutation({
+    mutationFn: (id: string) => deletePlan(id),
+    onSuccess: (_data, id) => {
+      void invalidatePlans()
+      const name = plans.find(p => p.id === id)?.name ?? 'Plan'
+      showToast('info', `"${name}" deactivated`)
+    },
+    onError: (err) => showToast('error', apiErrorMessage(err, 'Failed to deactivate plan')),
+  })
+
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
   const [activeIndex, setActiveIndex] = useState(0)
@@ -395,10 +507,17 @@ export default function PlansPage() {
   const activePlans = plans.filter(p => p.status === 'active')
   const visiblePlans = plans.filter(p => p.status !== 'archived')
 
+  const popularIdx = visiblePlans.findIndex(p => p.popular)
+  const popularKey = visiblePlans.map(p => `${p.id}:${p.popular}`).join('|')
+  const carouselInit = useRef(false)
   useEffect(() => {
-    const idx = visiblePlans.findIndex(p => p.popular)
-    if (idx >= 0) setActiveIndex(idx)
-  }, [])
+    if (!carouselInit.current && popularIdx >= 0) {
+      setActiveIndex(popularIdx)
+      carouselInit.current = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [popularKey])
+  const safeIndex = visiblePlans.length === 0 ? 0 : Math.min(activeIndex, visiblePlans.length - 1)
 
   const mrrFromPlans = activePlans.reduce((sum, p) => sum + p.monthlyPrice * p.activeSubscribers, 0)
   const totalSubscribers = activePlans.reduce((sum, p) => sum + p.activeSubscribers, 0)
@@ -410,38 +529,37 @@ export default function PlansPage() {
   }
 
   const handleSave = (plan: Plan, data: Partial<Plan>) => {
-    updatePlan(plan.id, data)
-    showToast('success', `"${data.name || plan.name}" updated successfully`)
+    // The backend plan has no description field — only persistable fields are sent.
+    return updateMut.mutateAsync({
+      id: plan.id,
+      payload: {
+        name: data.name ?? plan.name,
+        price_monthly: data.monthlyPrice ?? plan.monthlyPrice,
+        price_yearly: data.yearlyPrice ?? plan.yearlyPrice,
+        max_properties: data.maxProperties ?? plan.maxProperties,
+      },
+    }).then(() => undefined)
   }
 
   const handleArchive = (plan: Plan) => {
-    archivePlan(plan.id)
-    showToast('info', `"${plan.name}" archived`)
+    deactivateMut.mutate(plan.id)
   }
 
   const handleCreate = () => {
-    addPlan({
-      name: 'New Plan', slug: 'new-plan', description: 'Custom plan',
-      monthlyPrice: 0, yearlyPrice: 0, popular: false, color: '#6B7280',
-      features: [
-        { name: 'Property Listings', included: true, limit: 'Up to 10' },
-        { name: 'Room Management', included: true, limit: 'Up to 50' },
-        { name: 'Booking Engine', included: true },
-        { name: 'Basic Analytics', included: true },
-        { name: 'Staff Accounts', included: true, limit: 'Up to 3' },
-        { name: 'Channel Manager', included: false },
-        { name: 'Restaurant Module', included: false },
-        { name: 'Multi-language', included: false },
-        { name: 'API Access', included: false },
-        { name: 'Priority Support', included: false },
-        { name: 'Custom Domain', included: false },
-        { name: 'White Label', included: false },
-      ],
-      maxProperties: 10, maxRooms: 50, maxUsers: 3,
-      activeSubscribers: 0, status: 'active', createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    createMut.mutate({
+      name: 'New Plan',
+      slug: `new-plan-${Date.now()}`,
+      price_monthly: 0,
+      price_yearly: 0,
+      max_properties: 10,
+      max_rooms_per_property: 50,
+      max_staff: 3,
+      features: {},
     })
-    showToast('success', 'New plan created')
   }
+
+  const isLoading = plansQuery.isLoading
+  const isError = plansQuery.isError
 
   return (
     <PageTransition>
@@ -471,10 +589,11 @@ export default function PlansPage() {
           </div>
           <button
             onClick={handleCreate}
-            className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-all active:scale-95"
+            disabled={createMut.isPending}
+            className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-all active:scale-95 disabled:opacity-60"
             style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}
           >
-            <Plus size={13} /> New Plan
+            {createMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} New Plan
           </button>
         </div>
       </div>
@@ -502,17 +621,55 @@ export default function PlansPage() {
       </div>
 
       {/* ── Plan Cards / Table ─────────────────────────── */}
-      {viewMode === 'cards' ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-4">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 p-5 animate-pulse">
+              <div className="h-4 w-24 bg-gray-100 rounded mb-3" />
+              <div className="h-8 w-32 bg-gray-100 rounded mb-4" />
+              <div className="space-y-2">
+                <div className="h-3 w-full bg-gray-100 rounded" />
+                <div className="h-3 w-5/6 bg-gray-100 rounded" />
+                <div className="h-3 w-4/6 bg-gray-100 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="bg-white rounded-xl border border-red-200 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div className="text-[12px] text-red-600 font-medium">Failed to load plans. Check your connection and try again.</div>
+          <button
+            onClick={() => void plansQuery.refetch()}
+            className="px-3 py-1.5 text-[12px] font-medium text-white rounded-lg transition-colors shrink-0"
+            style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}
+          >
+            Retry
+          </button>
+        </div>
+      ) : visiblePlans.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-100 p-10 text-center">
+          <div className="text-sm font-semibold text-gray-900 mb-1">No plans found</div>
+          <p className="text-[12px] text-gray-400 mb-4">Create your first plan to get started.</p>
+          <button
+            onClick={handleCreate}
+            disabled={createMut.isPending}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-all active:scale-95 disabled:opacity-60"
+            style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}
+          >
+            {createMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} New Plan
+          </button>
+        </div>
+      ) : viewMode === 'cards' ? (
         <div className="relative">
           {/* Carousel Container */}
           <div className="overflow-hidden py-4">
             <div
               className="flex items-center justify-center gap-4 transition-transform duration-500 ease-out"
-              style={{ transform: `translateX(calc(50% - ${(activeIndex * 316) + 150}px))` }}
+              style={{ transform: `translateX(calc(50% - ${(safeIndex * 316) + 150}px))` }}
             >
               {visiblePlans.map((plan, i) => {
-                const isActive = i === activeIndex
-                const distance = Math.abs(i - activeIndex)
+                const isActive = i === safeIndex
+                const distance = Math.abs(i - safeIndex)
                 const scale = isActive ? 1 : Math.max(0.85, 1 - distance * 0.05)
                 const opacity = isActive ? 1 : Math.max(0.4, 1 - distance * 0.3)
                 const zIndex = isActive ? 10 : 5 - distance
@@ -538,13 +695,13 @@ export default function PlansPage() {
 
           {/* Navigation Arrows */}
           <button
-            onClick={() => goTo(activeIndex - 1)}
+            onClick={() => goTo(safeIndex - 1)}
             className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-800 hover:shadow-lg transition-all z-20"
           >
             <ChevronLeft size={18} />
           </button>
           <button
-            onClick={() => goTo(activeIndex + 1)}
+            onClick={() => goTo(safeIndex + 1)}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-800 hover:shadow-lg transition-all z-20"
           >
             <ChevronRight size={18} />
@@ -557,7 +714,7 @@ export default function PlansPage() {
                 key={i}
                 onClick={() => setActiveIndex(i)}
                 className={`rounded-full transition-all duration-300 ${
-                  i === activeIndex
+                  i === safeIndex
                     ? 'w-6 h-2 bg-[#2E86AB]'
                     : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
                 }`}

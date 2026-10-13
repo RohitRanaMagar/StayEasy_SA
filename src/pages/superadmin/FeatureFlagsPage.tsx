@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Flag, Plus, Search, ChevronLeft,
   CheckCircle, XCircle, Globe, Users, Palette,
@@ -8,6 +9,13 @@ import {
 } from 'lucide-react'
 import { useToast } from '../../components/superadmin/Toast'
 import type { SuperAdminFeatureFlag, TenantBrandingConfig, FeatureFlagCategory, TenantFeatureOverride, FeatureFlagActivity } from '../../types/superadmin'
+import {
+  listFeatureFlags,
+  createFeatureFlag,
+  updateFeatureFlag,
+  type FeatureFlagResponse,
+  type CreateFeatureFlagRequest,
+} from '../../services/superadminApi'
 
 const featureFlagCategories: FeatureFlagCategory[] = []
 const tenantFeatureOverrides: TenantFeatureOverride[] = []
@@ -15,6 +23,29 @@ const tenantBrandingConfigs: TenantBrandingConfig[] = []
 const featureFlagActivities: FeatureFlagActivity[] = []
 import { useSuperAdminStore } from '../../components/superadmin/superAdminStore'
 import { PageTransition } from '../../components/superadmin/Animations'
+
+// ═══════════════════════════════════════════════════════════════
+// API mapping (backend FeatureFlagResponse → UI SuperAdminFeatureFlag)
+// The backend flag has no category / scope / rollout fields, so
+// those map to honest defaults.
+// ═══════════════════════════════════════════════════════════════
+
+function toUiFlag(f: FeatureFlagResponse): SuperAdminFeatureFlag {
+  return {
+    id: f.id,
+    feature: f.name || f.key,
+    status: f.is_enabled,
+    description: f.description ?? '',
+    updatedAt: f.updated_at ?? f.created_at,
+    category: 'core',
+    scope: 'global',
+  }
+}
+
+function apiErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message
+  return fallback
+}
 
 // ═══════════════════════════════════════════════════════════════
 // Utility
@@ -105,8 +136,8 @@ function CategoryTabs({ active, onChange, featureFlags }: {
 // Global Feature Flag Table
 // ═══════════════════════════════════════════════════════════════
 
-function FeatureFlagsTable({ flags, onToggle }: {
-  flags: SuperAdminFeatureFlag[]; onToggle: (id: string) => void
+function FeatureFlagsTable({ flags, onToggle, onEdit }: {
+  flags: SuperAdminFeatureFlag[]; onToggle: (id: string) => void; onEdit: (flag: SuperAdminFeatureFlag) => void
 }) {
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
@@ -256,11 +287,11 @@ function FeatureFlagsTable({ flags, onToggle }: {
                             <ExternalLink size={12} />
                           </button>
                         )}
-                        <button onClick={() => showToast('info', `Edit flag: ${flag.feature} (mock)`)}
+                        <button onClick={() => onEdit(flag)}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" title="Edit flag">
                           <Edit size={12} />
                         </button>
-                        <button onClick={() => showToast('info', `Configure rollout for ${flag.feature} (mock)`)}
+                        <button onClick={() => showToast('info', 'Per-tenant rollout controls are not available in the API')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" title="Configure rollout">
                           <Settings size={12} />
                         </button>
@@ -291,12 +322,11 @@ function FeatureFlagsTable({ flags, onToggle }: {
 // Tenant Override Table
 // ═══════════════════════════════════════════════════════════════
 
-function TenantOverridesSection() {
+function TenantOverridesSection({ flags }: { flags: SuperAdminFeatureFlag[] }) {
   const { showToast } = useToast()
   const tenantOverrides = useSuperAdminStore(s => s.tenantOverrides)
   const removeOverride = useSuperAdminStore(s => s.removeOverride)
   const addOverride = useSuperAdminStore(s => s.addOverride)
-  const flags = useSuperAdminStore(s => s.featureFlags)
   const tenants = useSuperAdminStore(s => s.tenants)
   const [expandedTenant, setExpandedTenant] = useState<string | null>(null)
 
@@ -560,17 +590,129 @@ function ActivityLogSection() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Flag Editor Modal
+// ═══════════════════════════════════════════════════════════════
+
+function FlagEditorModal({ flag, onClose, onSave }: {
+  flag: SuperAdminFeatureFlag | null
+  onClose: () => void
+  onSave?: (f: SuperAdminFeatureFlag, data: { name: string; description: string; is_enabled: boolean }) => void | Promise<void>
+}) {
+  const [saving, setSaving] = useState(false)
+  const [name, setName] = useState(flag?.feature || '')
+  const [desc, setDesc] = useState(flag?.description || '')
+  const [enabled, setEnabled] = useState(flag?.status ?? false)
+
+  if (!flag) return null
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await onSave?.(flag, { name, description: desc, is_enabled: enabled })
+      onClose()
+    } catch {
+      // Parent mutation already toasted the error; keep the modal open.
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#2E86AB]/10 flex items-center justify-center">
+              <Flag size={18} className="text-[#2E86AB]" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Edit Flag</h3>
+              <p className="text-[11px] text-gray-400">Configure flag details and default state</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+            <XCircle size={18} />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-3">
+          <div>
+            <label className="block text-[11px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Flag Name</label>
+            <input value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors" />
+          </div>
+          <div>
+            <label className="block text-[11px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Description</label>
+            <textarea
+              value={desc}
+              onChange={e => setDesc(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-[#2E86AB] transition-colors resize-none"
+            />
+          </div>
+          <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+            <span className="text-[12px] text-gray-600">Enabled by default</span>
+            <ToggleSwitch enabled={enabled} onChange={() => setEnabled(v => !v)} size="sm" />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100">
+          <button onClick={onClose} disabled={saving} className="px-4 py-2 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 text-[12px] font-semibold text-white rounded-lg transition-all active:scale-95 disabled:opacity-60 flex items-center gap-1.5"
+            style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}
+          >
+            {saving ? <><Loader2 size={13} className="animate-spin" /> Saving...</> : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Main Page
 // ═══════════════════════════════════════════════════════════════
 
 export default function FeatureFlagsPage() {
   const { showToast } = useToast()
-  const featureFlags = useSuperAdminStore(s => s.featureFlags)
-  const toggleFlag = useSuperAdminStore(s => s.toggleFlag)
-  const addFlag = useSuperAdminStore(s => s.addFlag)
+  const queryClient = useQueryClient()
+  const flagsQuery = useQuery({ queryKey: ['sa-flags'], queryFn: listFeatureFlags })
+  const featureFlags: SuperAdminFeatureFlag[] = useMemo(
+    () => (flagsQuery.data?.flags ?? []).map(toUiFlag),
+    [flagsQuery.data],
+  )
+
+  const invalidateFlags = () => queryClient.invalidateQueries({ queryKey: ['sa-flags'] })
+
+  const createMut = useMutation({
+    mutationFn: (payload: CreateFeatureFlagRequest) => createFeatureFlag(payload),
+    onSuccess: () => {
+      void invalidateFlags()
+      showToast('success', 'New feature flag created')
+    },
+    onError: (err) => showToast('error', apiErrorMessage(err, 'Failed to create feature flag')),
+  })
+  const updateMut = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof updateFeatureFlag>[1] }) =>
+      updateFeatureFlag(id, payload),
+    onSuccess: () => {
+      void invalidateFlags()
+      showToast('success', 'Feature flag updated')
+    },
+    onError: (err) => showToast('error', apiErrorMessage(err, 'Failed to update feature flag')),
+  })
+
   const [activeCategory, setActiveCategory] = useState('all')
   const [activeTab, setActiveTab] = useState<'overview' | 'branding'>('overview')
   const [syncing, setSyncing] = useState(false)
+  const [editingFlag, setEditingFlag] = useState<SuperAdminFeatureFlag | null>(null)
 
   const displayedFlags = activeCategory === 'all'
     ? featureFlags
@@ -578,18 +720,35 @@ export default function FeatureFlagsPage() {
 
   const handleSync = async () => {
     setSyncing(true)
-    await new Promise(r => setTimeout(r, 800))
+    const result = await flagsQuery.refetch()
     setSyncing(false)
-    showToast('success', 'Feature flags synced successfully')
+    if (result.isError) {
+      showToast('error', 'Failed to sync feature flags')
+    } else {
+      showToast('success', 'Feature flags synced successfully')
+    }
   }
 
   const handleNewFlag = () => {
-    addFlag({
-      feature: 'New Feature', status: false,
-      description: 'Description pending', updatedAt: new Date().toLocaleString(),
-      category: 'experimental', scope: 'global', rolloutPercent: 0,
+    createMut.mutate({
+      name: 'New Feature',
+      key: `new-feature-${Date.now()}`,
+      description: '',
+      is_enabled: false,
     })
-    showToast('success', 'New feature flag created')
+  }
+
+  const handleToggle = (id: string) => {
+    const flag = featureFlags.find(f => f.id === id)
+    if (!flag) return
+    updateMut.mutate({ id, payload: { is_enabled: !flag.status } })
+  }
+
+  const handleEditSave = (flag: SuperAdminFeatureFlag, data: { name: string; description: string; is_enabled: boolean }) => {
+    return updateMut.mutateAsync({
+      id: flag.id,
+      payload: { name: data.name, description: data.description, is_enabled: data.is_enabled },
+    }).then(() => undefined)
   }
 
   const totalEnabled = featureFlags.filter(f => f.status).length
@@ -608,11 +767,11 @@ export default function FeatureFlagsPage() {
             className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
             {syncing ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} {syncing ? 'Syncing...' : 'Sync'}
           </button>
-          <button onClick={handleNewFlag}
-            className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-all active:scale-95"
+          <button onClick={handleNewFlag} disabled={createMut.isPending}
+            className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-all active:scale-95 disabled:opacity-60"
             style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}
           >
-            <Plus size={13} /> New Flag
+            {createMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} New Flag
           </button>
         </div>
       </div>
@@ -682,12 +841,44 @@ export default function FeatureFlagsPage() {
           <CategoryTabs active={activeCategory} onChange={setActiveCategory} featureFlags={featureFlags} />
 
           {/* Feature Flags Table */}
-          <FeatureFlagsTable flags={displayedFlags} onToggle={toggleFlag} />
+          {flagsQuery.isLoading ? (
+            <div className="bg-white rounded-xl border border-gray-100 p-4 space-y-2 animate-pulse">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className="h-10 bg-gray-100 rounded-lg" />
+              ))}
+            </div>
+          ) : flagsQuery.isError ? (
+            <div className="bg-white rounded-xl border border-red-200 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <div className="text-[12px] text-red-600 font-medium">Failed to load feature flags. Check your connection and try again.</div>
+              <button
+                onClick={() => void flagsQuery.refetch()}
+                className="px-3 py-1.5 text-[12px] font-medium text-white rounded-lg transition-colors shrink-0"
+                style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}
+              >
+                Retry
+              </button>
+            </div>
+          ) : featureFlags.length === 0 ? (
+            <div className="bg-white rounded-xl border border-gray-100 p-10 text-center">
+              <div className="text-sm font-semibold text-gray-900 mb-1">No feature flags found</div>
+              <p className="text-[12px] text-gray-400 mb-4">Create your first flag to get started.</p>
+              <button
+                onClick={handleNewFlag}
+                disabled={createMut.isPending}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-white rounded-lg transition-all active:scale-95 disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #2E86AB, #1A6B8A)' }}
+              >
+                {createMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} New Flag
+              </button>
+            </div>
+          ) : (
+            <FeatureFlagsTable flags={displayedFlags} onToggle={handleToggle} onEdit={setEditingFlag} />
+          )}
 
           {/* Two column: Tenant Overrides + Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             <div className="xl:col-span-2">
-              <TenantOverridesSection />
+              <TenantOverridesSection flags={featureFlags} />
             </div>
             <div className="xl:col-span-1">
               <ActivityLogSection />
@@ -718,8 +909,13 @@ export default function FeatureFlagsPage() {
           {/* White Label Flags */}
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Branding Feature Flags</h3>
+            {brandingFlags.length === 0 ? (
+              <div className="py-6 text-center text-gray-400 text-[12px]">
+                No branding flags returned by the API.
+              </div>
+            ) : (
             <div className="space-y-1">
-              {featureFlags.filter(f => f.category === 'branding').map(flag => {
+              {brandingFlags.map(flag => {
                 const catColor = categoryColorMap.branding || '#6B7280'
                 const deps = flag.dependencies || []
                 return (
@@ -741,11 +937,12 @@ export default function FeatureFlagsPage() {
                         )}
                       </div>
                     </div>
-                    <ToggleSwitch enabled={flag.status} onChange={() => toggleFlag(flag.id)} size="sm" />
+                    <ToggleSwitch enabled={flag.status} onChange={() => handleToggle(flag.id)} size="sm" />
                   </div>
                 )
               })}
             </div>
+            )}
           </div>
 
           {/* Active White Label Tenants */}
@@ -754,13 +951,24 @@ export default function FeatureFlagsPage() {
               <h3 className="text-sm font-semibold text-gray-900">Active Branding Configurations</h3>
               <span className="text-[11px] text-gray-400">{tenantBrandingConfigs.length} tenants</span>
             </div>
+            {tenantBrandingConfigs.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-100 p-6 text-center text-gray-400 text-[12px]">
+                No branding configurations yet.
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {tenantBrandingConfigs.map(config => (
                 <BrandingConfigCard key={config.tenantId} config={config} />
               ))}
             </div>
+            )}
           </div>
         </div>
+      )}
+
+      {/* ── Flag Editor Modal ──────────────────────────── */}
+      {editingFlag && (
+        <FlagEditorModal flag={editingFlag} onClose={() => setEditingFlag(null)} onSave={handleEditSave} />
       )}
     </div>
     </PageTransition>
